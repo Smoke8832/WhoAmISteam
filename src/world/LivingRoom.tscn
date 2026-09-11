@@ -37,7 +37,7 @@ shadow_enabled = true
 [node name="CeilingLight" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 light_color = Color(1, 0.95, 0.85, 1)
-light_energy = 2.5
+light_energy = 1.2
 omni_range = 9.0
 omni_attenuation = 1.2
 

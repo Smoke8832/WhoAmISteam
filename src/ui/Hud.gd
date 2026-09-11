@@ -79,9 +79,29 @@ func set_prompt(text: String) -> void:
 	prompt_label.visible = text != ""
 
 
-## Opened from the wardrobe mirror (customizer UI arrives in M2).
+const CUSTOMIZER_SCENE := preload("res://src/ui/Customizer.tscn")
+var _customizer: Control = null
+
+
+## Opened from the wardrobe mirror.
 func open_customizer() -> void:
-	show_notice(tr("WARDROBE_SOON"))
+	if _customizer and is_instance_valid(_customizer):
+		return
+	_customizer = CUSTOMIZER_SCENE.instantiate()
+	add_child(_customizer)
+	_customizer.closed.connect(_on_customizer_closed)
+
+
+func _on_customizer_closed() -> void:
+	_customizer = null
+	var main := get_tree().current_scene
+	var player: Node = main.local_player() if main and main.has_method("local_player") else null
+	if player and not Settings.cli.bot:
+		player._set_mouse_captured(true)
+
+
+func is_modal_open() -> bool:
+	return _customizer != null and is_instance_valid(_customizer)
 
 
 func show_notice(text: String) -> void:

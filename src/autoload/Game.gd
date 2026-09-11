@@ -334,6 +334,27 @@ func start_round_local() -> void:
 		request_start.rpc_id(HOST_ID)
 
 
+## Client -> Host. New look and/or name from the wardrobe.
+@rpc("any_peer", "call_remote", "reliable")
+func submit_customization(name: String, customization: Dictionary) -> void:
+	if not Net.is_host():
+		return
+	var id := _sender_id()
+	if not players.has(id):
+		return
+	players[id].name = sanitize_name(name)
+	players[id].customization = Customization.sanitize(customization)
+	players_changed.emit()
+	broadcast_snapshot()
+
+
+func submit_customization_local(name: String, customization: Dictionary) -> void:
+	if Net.is_host():
+		submit_customization(name, customization)
+	else:
+		submit_customization.rpc_id(HOST_ID, name, customization)
+
+
 # ---------------------------------------------------------- room interaction
 
 func _sender_id() -> int:

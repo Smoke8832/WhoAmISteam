@@ -94,6 +94,11 @@ static func local() -> Dictionary:
 	return _cached
 
 
+## Use a look for this session without saving it (bots).
+static func override_local(data: Dictionary) -> void:
+	_cached = sanitize(data)
+
+
 static func save_local(data: Dictionary) -> void:
 	_cached = sanitize(data)
 	var cfg := ConfigFile.new()

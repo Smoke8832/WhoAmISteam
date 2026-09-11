@@ -13,7 +13,7 @@ const WALL_T := 0.2
 const COL_FLOOR := Color("c69c6d")
 const COL_WALL := Color("f3e9d2")
 const COL_WALL_ACCENT := Color("9fc5e8")
-const COL_CEILING := Color("f7f4ec")
+const COL_CEILING := Color("dcd5c6")
 const COL_TRIM := Color("6b4a2b")
 
 ## Seat ring: 8 chairs on an ellipse around the coffee table, all facing the center.
@@ -89,14 +89,12 @@ static func build(root: Node3D) -> Dictionary:
 		_place_decor(root, entry)
 	_build_props(root, props)
 	_build_fixtures(root)
+	ToonMaterials.convert(root)
 	return {"chairs": chairs, "props": props}
 
 
-static func _mat(color: Color, roughness: float = 0.9) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = color
-	m.roughness = roughness
-	return m
+static func _mat(color: Color, _roughness: float = 0.9) -> Material:
+	return ToonMaterials.make(color)
 
 
 static func _box(parent: Node3D, name: String, size: Vector3, pos: Vector3, color: Color, collide: bool = true) -> StaticBody3D:
@@ -138,10 +136,7 @@ static func _build_shell(root: Node3D) -> void:
 	# Windows on the east wall (emissive panes)
 	for z in [-2.4, 0.0, 2.4]:
 		var pane := _box(shell, "Window%d" % int(z * 10), Vector3(0.06, 1.3, 1.6), Vector3(ROOM_W / 2.0 - 0.06, 1.7, z), Color("dff3ff"), false)
-		var mat := pane.get_child(0).material_override as StandardMaterial3D
-		mat.emission_enabled = true
-		mat.emission = Color("cfeaff")
-		mat.emission_energy_multiplier = 0.8
+		(pane.get_child(0) as MeshInstance3D).material_override = ToonMaterials.make(Color("dff3ff"), null, Color("cfeaff"), 0.8)
 		_box(shell, "WindowFrame%d" % int(z * 10), Vector3(0.08, 1.4, 1.7), Vector3(ROOM_W / 2.0 - 0.1, 1.7, z), Color("f7f4ec"), false)
 	# Door on the south wall
 	_box(shell, "Door", Vector3(1.1, 2.2, 0.06), Vector3(4.6, 1.1, ROOM_D / 2.0 - 0.04), COL_TRIM, false)
@@ -305,11 +300,7 @@ static func _build_fixtures(root: Node3D) -> void:
 	quad.size = Vector2(1.3, 0.78)
 	tv.mesh = quad
 	tv.position = Vector3(0.0, 1.07, -4.53)
-	var tvm := _mat(Color("101418"), 0.2)
-	tvm.emission_enabled = true
-	tvm.emission = Color("1c2a3a")
-	tvm.emission_energy_multiplier = 0.6
-	tv.material_override = tvm
+	tv.material_override = ToonMaterials.make(Color("101418"), null, Color("1c2a3a"), 0.6)
 	fx.add_child(tv)
 	# Whiteboard on the west wall (M3 draws the rules)
 	var wb := StaticBody3D.new()
@@ -348,7 +339,9 @@ static func _build_fixtures(root: Node3D) -> void:
 	mq.size = Vector2(1.0, 1.8)
 	mirror.mesh = mq
 	mirror.position = Vector3(0, 1.15, 0.31)
-	var mm := _mat(Color("cfe6f5"), 0.05)
+	var mm := StandardMaterial3D.new()
+	mm.albedo_color = Color("cfe6f5")
+	mm.roughness = 0.05
 	mm.metallic = 0.9
 	mirror.material_override = mm
 	wardrobe.add_child(mirror)

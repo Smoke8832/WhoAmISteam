@@ -7,12 +7,15 @@ var _next_turn := 0.0
 var _shots_taken := 0
 var _ready_sent := false
 var _start_sent := false
+var _wardrobe_done := false
 
 const SHOT_TIMES := [4.0, 12.0, 30.0]
 
 
 func _ready() -> void:
 	print("[bot] active as '%s'" % Settings.player_name())
+	Customization.override_local(Customization.randomized())
+	Settings.data.third_person = false   # bots always start in first person (do not persist)
 	Game.state_changed.connect(_on_state_changed)
 
 
@@ -51,6 +54,16 @@ func _process(delta: float) -> void:
 		player.throw_held()
 	elif player.held_prop < 0 and player.look_target() is Prop and randf() < 0.2:
 		Game.req_grab_local((player.look_target() as Prop).prop_id)
+	# Open the wardrobe once for a screenshot, then close it.
+	var hud: Node = main.get("hud")
+	if hud and not _wardrobe_done and _t > 15.0:
+		_wardrobe_done = true
+		hud.open_customizer()
+		await get_tree().create_timer(1.5).timeout
+		await _screenshot("wardrobe")
+		if hud.is_modal_open():
+			hud._customizer._on_random()
+			hud._customizer._on_save()
 	# Lobby behaviour
 	if Game.state == Game.State.LOBBY:
 		if not _ready_sent and _t > 2.0:

@@ -51,6 +51,10 @@ var _look_target: Node3D = null   # what the local player is looking at (interac
 
 @onready var collider: CollisionShape3D = $Collider
 @onready var body: Node3D = $Body
+@onready var rig: CharacterRig = $Body/Rig
+@onready var fp_postfx: MeshInstance3D = $Head/Camera3D/PostFX
+@onready var tp_postfx: MeshInstance3D = $Head/SpringArm3D/TPCamera/PostFX
+var _custom_hash: int = 0
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var spring_arm: SpringArm3D = $Head/SpringArm3D
@@ -75,6 +79,9 @@ func _ready() -> void:
 	else:
 		global_position = net_pos if net_pos != Vector3.ZERO else spawn_transform.origin
 	third_person = bool(Settings.get_value("third_person", false)) and is_local()
+	var c: Dictionary = Game.player(peer_id).get("customization", Customization.local() if is_local() else Customization.defaults())
+	_custom_hash = hash(c)
+	rig.apply(c)
 	_apply_camera_mode()
 	_refresh_name_tag()
 	emote_bubble.visible = false
@@ -96,10 +103,11 @@ func _apply_camera_mode() -> void:
 	camera.current = local and not third_person
 	tp_camera.current = local and third_person
 	# Layer 2 = own body, hidden from the first-person camera only.
-	for mi in body.find_children("*", "MeshInstance3D", true, false):
-		(mi as MeshInstance3D).layers = 2 if local else 1
+	rig.set_visual_layers(2 if local else 1)
 	camera.cull_mask = 1 | (1 << 10)
 	tp_camera.cull_mask = 1 | 2 | (1 << 10)
+	fp_postfx.visible = camera.current
+	tp_postfx.visible = tp_camera.current
 	name_tag.visible = not local or third_person
 
 
@@ -137,7 +145,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func set_third_person(value: bool) -> void:
 	third_person = value
-	Settings.set_value("third_person", value)
+	if not Settings.cli.bot:
+		Settings.set_value("third_person", value)
 	_apply_camera_mode()
 
 
@@ -263,10 +272,12 @@ func _animate(delta: float) -> void:
 		eye = CROUCH_EYE_HEIGHT
 	head.position.y = lerpf(head.position.y, eye, clampf(delta * 10.0, 0.0, 1.0))
 	_squash = lerpf(_squash, 1.0, clampf(delta * 6.0, 0.0, 1.0))
-	var body_scale_y := (0.65 if (crouching or anim == Anim.SIT) else 1.0) * _squash
+	var body_scale_y := (0.7 if crouching else 1.0) * _squash
 	body.scale = Vector3(1.0 / sqrt(_squash), body_scale_y, 1.0 / sqrt(_squash))
-	if body.has_node("Rig"):
-		body.get_node("Rig").set_anim(anim, delta)
+	# Sitting lowers the hips to seat height; the rig folds the legs forward.
+	body.position.y = lerpf(body.position.y, -0.25 if anim == Anim.SIT else 0.0, clampf(delta * 10.0, 0.0, 1.0))
+	rig.set_head_pitch(pitch)
+	rig.set_anim(anim, delta)
 	if _emote_timer > 0.0:
 		_emote_timer -= delta
 		if _emote_timer <= 0.0:
@@ -361,6 +372,11 @@ func _on_players_changed() -> void:
 		seat_chair = new_seat
 		_apply_seat()
 	held_prop = int(p.get("held_prop", -1))
+	var c: Dictionary = p.get("customization", {})
+	if not c.is_empty() and hash(c) != _custom_hash:
+		_custom_hash = hash(c)
+		rig.apply(c)
+		_apply_camera_mode()
 
 
 func _apply_seat() -> void:
@@ -412,8 +428,7 @@ func play_emote(id: int) -> void:
 	emote_bubble.visible = true
 	_emote_timer = 2.2
 	_squash = 1.15
-	if body.has_node("Rig"):
-		body.get_node("Rig").play_emote(id)
+	rig.play_emote(id)
 	Audio.play_at("emote_%d" % id, global_position, get_parent())
 
 
