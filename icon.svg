@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <g transform="rotate(-6 64 64)">
+    <rect x="18" y="20" width="92" height="92" rx="3" fill="#FFE14D" stroke="#1C1A17" stroke-width="4"/>
+    <rect x="46" y="10" width="36" height="14" rx="2" fill="#8CC4E8" opacity="0.9" transform="rotate(2 64 17)"/>
+    <text x="64" y="86" font-family="Comic Sans MS, Patrick Hand, cursive" font-size="56" font-weight="bold" text-anchor="middle" fill="#1C1A17">?</text>
+  </g>
+</svg>

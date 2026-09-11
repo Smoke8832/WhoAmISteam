@@ -1,0 +1,110 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/ui/Hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chat"]
+bg_color = Color(0.1, 0.1, 0.1, 0.45)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+
+[node name="Hud" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hud")
+
+[node name="TopLeft" type="VBoxContainer" parent="."]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 360.0
+offset_bottom = 220.0
+mouse_filter = 2
+
+[node name="StatusLabel" type="Label" parent="TopLeft"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeaderMedium"
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "LOBBY"
+
+[node name="PlayerList" type="Label" parent="TopLeft"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+text = ""
+
+[node name="NoticeLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -400.0
+offset_top = 60.0
+offset_right = 400.0
+offset_bottom = 110.0
+grow_horizontal = 2
+theme_type_variation = &"HeaderMedium"
+theme_override_colors/font_color = Color(1, 0.88, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+text = ""
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Hints" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -40.0
+offset_right = -16.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+text = "HINT_CONTROLS"
+horizontal_alignment = 2
+
+[node name="Chat" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -230.0
+offset_right = 436.0
+offset_bottom = -16.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="ChatLog" type="RichTextLabel" parent="Chat"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_chat")
+scroll_following = true
+
+[node name="ChatInput" type="LineEdit" parent="Chat"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Say something…"
+max_length = 200

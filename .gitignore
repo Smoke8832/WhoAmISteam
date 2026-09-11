@@ -1,0 +1,11 @@
+# Godot 4
+.godot/
+*.translation
+# Local run artifacts
+.logs/
+screenshots/
+exports/
+*.tmp
+# OS
+Thumbs.db
+Desktop.ini

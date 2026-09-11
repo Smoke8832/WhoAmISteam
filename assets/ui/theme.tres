@@ -1,0 +1,18 @@
+[gd_resource type="Theme" load_steps=3 format=3]
+
+[ext_resource type="FontFile" path="res://assets/fonts/PatrickHand-Regular.ttf" id="1_marker"]
+[ext_resource type="FontFile" path="res://assets/fonts/Nunito-Variable.ttf" id="2_body"]
+
+[resource]
+default_font = ExtResource("2_body")
+default_font_size = 18
+Button/font_sizes/font_size = 22
+Button/fonts/font = ExtResource("1_marker")
+HeaderLarge/font_sizes/font_size = 40
+HeaderLarge/fonts/font = ExtResource("1_marker")
+HeaderMedium/font_sizes/font_size = 28
+HeaderMedium/fonts/font = ExtResource("1_marker")
+HeaderSmall/font_sizes/font_size = 22
+HeaderSmall/fonts/font = ExtResource("1_marker")
+Label/fonts/font = ExtResource("2_body")
+LineEdit/fonts/font = ExtResource("2_body")
