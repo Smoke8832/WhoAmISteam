@@ -6,6 +6,7 @@ extends Control
 @onready var chat_log: RichTextLabel = %ChatLog
 @onready var chat_input: LineEdit = %ChatInput
 @onready var player_list: Label = %PlayerList
+@onready var prompt_label: Label = %Prompt
 
 var _notice_tween: Tween
 
@@ -71,6 +72,16 @@ func _refresh() -> void:
 		if not Game.players[id].connected:
 			lines.append("%s (away)" % Game.players[id].name)
 	player_list.text = "\n".join(lines)
+
+
+func set_prompt(text: String) -> void:
+	prompt_label.text = text
+	prompt_label.visible = text != ""
+
+
+## Opened from the wardrobe mirror (customizer UI arrives in M2).
+func open_customizer() -> void:
+	show_notice(tr("WARDROBE_SOON"))
 
 
 func show_notice(text: String) -> void:

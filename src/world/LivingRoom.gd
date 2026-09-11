@@ -1,16 +1,47 @@
 extends Node3D
-## The living room. Also the lobby. Exposes spawn points and (from M1) chairs and props.
+## The living room. Also the lobby. Built procedurally by RoomBuilder on every peer.
 
-@onready var spawn_points: Node3D = $SpawnPoints
+var chair_nodes: Array = []
+var prop_nodes: Array = []
+var _spawns: Array[Transform3D] = []
+
+
+func _ready() -> void:
+	var built := RoomBuilder.build(self)
+	chair_nodes = built.chairs
+	prop_nodes = built.props
+	_spawns = RoomBuilder.spawn_points()
 
 
 func spawn_transform(slot: int) -> Transform3D:
-	var points := spawn_points.get_children()
-	if points.is_empty():
-		return Transform3D(Basis.IDENTITY, Vector3(0, 1, 0))
-	var m: Node3D = points[slot % points.size()]
-	return m.global_transform
+	if _spawns.is_empty():
+		return Transform3D(Basis.IDENTITY, Vector3(0, 0.1, 3))
+	return _spawns[slot % _spawns.size()]
 
 
 func chairs() -> Array:
-	return get_tree().get_nodes_in_group("chairs")
+	return chair_nodes
+
+
+func chair(chair_id: int) -> Chair:
+	if chair_id < 0 or chair_id >= chair_nodes.size():
+		return null
+	return chair_nodes[chair_id]
+
+
+func props() -> Array:
+	return prop_nodes
+
+
+func prop(prop_id: int) -> Prop:
+	if prop_id < 0 or prop_id >= prop_nodes.size():
+		return null
+	return prop_nodes[prop_id]
+
+
+## Seat order used for the ring assignment: chair ids ascending (clockwise around the table).
+func seat_order() -> Array:
+	var ids: Array = []
+	for c in chair_nodes:
+		ids.append(c.chair_id)
+	return ids

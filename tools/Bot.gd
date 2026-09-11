@@ -35,6 +35,22 @@ func _process(delta: float) -> void:
 			var target: Node3D = others[randi() % others.size()]
 			player.face_toward(target.global_position + Vector3(0, 1.4, 0))
 			player.bot_look = Vector2.ZERO
+	# Room interaction: sit down after a while, emote now and then, throw whatever is in hand.
+	if _t > 8.0 and not player.seated and randf() < 0.004:
+		var lvl := Game.level()
+		if lvl:
+			for c in lvl.chairs():
+				if c.is_free():
+					Game.req_sit_local(c.chair_id)
+					break
+	if player.seated and randf() < 0.002:
+		Game.req_stand_local()
+	if randf() < 0.003:
+		player.emote(randi() % 3)
+	if player.held_prop >= 0 and randf() < 0.02:
+		player.throw_held()
+	elif player.held_prop < 0 and player.look_target() is Prop and randf() < 0.2:
+		Game.req_grab_local((player.look_target() as Prop).prop_id)
 	# Lobby behaviour
 	if Game.state == Game.State.LOBBY:
 		if not _ready_sent and _t > 2.0:
@@ -43,9 +59,12 @@ func _process(delta: float) -> void:
 		if Net.is_host() and not _start_sent and Game.all_ready() and _t > 6.0:
 			_start_sent = true
 			Game.start_round_local()
-	# Screenshots
+	# Screenshots (the last one in third person so the own character is visible)
 	if _shots_taken < SHOT_TIMES.size() and _t >= SHOT_TIMES[_shots_taken]:
 		_shots_taken += 1
+		if _shots_taken == SHOT_TIMES.size():
+			player.set_third_person(true)
+			await get_tree().process_frame
 		_screenshot("t%02d" % int(_t))
 
 

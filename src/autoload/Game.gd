@@ -140,7 +140,14 @@ static func default_player(name: String, customization: Dictionary) -> Dictionar
 		"score": 0,
 		"connected": true,
 		"held": false,          # true while a disconnected player's slot is kept for rejoin
+		"held_prop": -1,        # prop id currently carried, -1 = none
 	}
+
+
+## The LivingRoom node (or null before a session starts).
+func level() -> Node:
+	var main := get_tree().current_scene
+	return main.get("level") if main else null
 
 
 # --------------------------------------------------------- connection events
@@ -171,11 +178,13 @@ func _on_peer_disconnected(id: int) -> void:
 		return
 	if not players.has(id):
 		return
+	_release_props_of(id)
 	var mid_round := state in [State.WRITING, State.STICKING, State.GUESSING]
 	if mid_round and not players[id].spectator:
 		players[id].connected = false
 		players[id].held = true
 		players[id].ready = false
+		players[id].seat = -1
 		notice.emit("%s disconnected. Their seat is kept until the round ends." % player_name(id))
 	else:
 		players.erase(id)
@@ -323,6 +332,121 @@ func start_round_local() -> void:
 		request_start()
 	else:
 		request_start.rpc_id(HOST_ID)
+
+
+# ---------------------------------------------------------- room interaction
+
+func _sender_id() -> int:
+	var id := multiplayer.get_remote_sender_id()
+	return HOST_ID if id == 0 else id
+
+
+## Client -> Host. Sit on a chair if it is free.
+@rpc("any_peer", "call_remote", "reliable")
+func req_sit(chair_id: int) -> void:
+	if not Net.is_host():
+		return
+	var id := _sender_id()
+	if not players.has(id) or not players[id].connected:
+		return
+	var lvl := level()
+	if lvl == null or lvl.chair(chair_id) == null:
+		return
+	for other in players.keys():
+		if int(players[other].seat) == chair_id and other != id:
+			return
+	players[id].seat = chair_id
+	players_changed.emit()
+	broadcast_snapshot()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func req_stand() -> void:
+	if not Net.is_host():
+		return
+	var id := _sender_id()
+	if not players.has(id):
+		return
+	players[id].seat = -1
+	players_changed.emit()
+	broadcast_snapshot()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func req_grab(prop_id: int) -> void:
+	if not Net.is_host():
+		return
+	var id := _sender_id()
+	if not players.has(id) or int(players[id].held_prop) >= 0:
+		return
+	var lvl := level()
+	var prop: Prop = lvl.prop(prop_id) if lvl else null
+	if prop == null or not prop.grab(id):
+		return
+	players[id].held_prop = prop_id
+	players_changed.emit()
+	broadcast_snapshot()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func req_throw(direction: Vector3, force: float) -> void:
+	if not Net.is_host():
+		return
+	var id := _sender_id()
+	if not players.has(id):
+		return
+	var prop_id := int(players[id].held_prop)
+	if prop_id < 0:
+		return
+	var lvl := level()
+	var prop: Prop = lvl.prop(prop_id) if lvl else null
+	if prop and prop.held_by == id:
+		if typeof(direction) != TYPE_VECTOR3 or not direction.is_finite():
+			direction = Vector3.DOWN
+		prop.throw(direction, clampf(force, 0.0, Prop.MAX_THROW_FORCE))
+	players[id].held_prop = -1
+	players_changed.emit()
+	broadcast_snapshot()
+
+
+func _release_props_of(id: int) -> void:
+	if not players.has(id):
+		return
+	var prop_id := int(players[id].get("held_prop", -1))
+	if prop_id >= 0:
+		var lvl := level()
+		var prop: Prop = lvl.prop(prop_id) if lvl else null
+		if prop:
+			prop.release()
+		players[id].held_prop = -1
+
+
+func req_sit_local(chair_id: int) -> void:
+	if Net.is_host():
+		req_sit(chair_id)
+	else:
+		req_sit.rpc_id(HOST_ID, chair_id)
+
+
+func req_stand_local() -> void:
+	if Net.is_host():
+		req_stand()
+	else:
+		req_stand.rpc_id(HOST_ID)
+
+
+func req_grab_local(prop_id: int) -> void:
+	if Net.is_host():
+		req_grab(prop_id)
+	else:
+		req_grab.rpc_id(HOST_ID, prop_id)
+
+
+func req_throw_local(direction: Vector3, force: float) -> void:
+	if Net.is_host():
+		req_throw(direction, force)
+	else:
+		req_throw.rpc_id(HOST_ID, direction, force)
 
 
 ## Any -> Host -> All.
