@@ -313,3 +313,26 @@ Party mode (no turns), host migration, public matchmaking, controller support, L
 2. Clone `github.com/Smoke8832/WhoAmISteam` to `C:\Users\savas\WhoAmISteam`; commit `docs/PLAN.md`.
 3. Execute M0 → M8 in order, running `run_local.ps1 -Bot` and unit tests at each milestone.
 4. Owner tasks in parallel: Steamworks partner signup, app fee, App ID, Playtest app; capsule art review.
+
+---
+
+## 10. Build status (2026-09-12, overnight build)
+
+| Milestone | Status | Verified by |
+|---|---|---|
+| M0 skeleton, ENet, lobby loop | done | bots, tests |
+| M1 living room, seats, props, emotes, third person | done | bots + screenshots |
+| M2 toon/ink look, characters, post-it, wardrobe | done | CharacterViewer, bots |
+| M3 lobby settings, kick, spectators, rejoin, TV, whiteboard, how-to-play | done | bots, `tools/test_rejoin.ps1` |
+| M4 writing phase, image pipeline, chunked transfer, secrecy | done | bots (3 paths), secrecy log, tests |
+| M5 guessing: turns, votes, claims, scoring, round-end modes | done | bots (full rounds), tests |
+| M6 Steam lobbies, invites, rich presence, P2P peer | code complete | live: init, lobby create/join, presence, timeout. **Not verified: P2P handshake between two accounts** |
+| M7 in-game voice (Steam Voice + PCM fallback), mute, indicators | code complete | bots exercise the PCM relay; **not verified: real microphones / Steam Voice codec** |
+| M8 sounds, options, export, upload script | done | `exports/windows/WhoAmIParty.exe` smoke-tested |
+
+Deviations from the plan: unit tests use an in-house runner (`tests/TestMain.tscn`) instead of gdUnit4;
+the Steam transport is an in-house `SteamPeer` (the official MultiplayerPeer only ships as a custom Godot
+4.5 editor); voice also works over LAN with raw PCM so it could be tested without Steam.
+
+Known follow-ups: Windows .ico for the executable, Steam Cloud config, store assets, a two-account Steam
+test, a real-microphone voice test, and tuning the ink post-process on the far wall.

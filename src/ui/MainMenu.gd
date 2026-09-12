@@ -2,6 +2,7 @@ extends Control
 ## Main menu: host or join. Steam buttons light up when SteamTransport is available (M6).
 
 signal howto_requested
+signal options_requested
 
 @onready var name_edit: LineEdit = %NameEdit
 @onready var address_edit: LineEdit = %AddressEdit
@@ -24,6 +25,7 @@ func _ready() -> void:
 	join_button.pressed.connect(_on_join)
 	quit_button.pressed.connect(func(): get_tree().quit())
 	how_button.pressed.connect(func(): howto_requested.emit())
+	%OptionsButton.pressed.connect(func(): options_requested.emit())
 	address_edit.text = "127.0.0.1"
 	address_edit.text_submitted.connect(func(_t): _on_join())
 	status_label.text = ""

@@ -4,6 +4,7 @@ extends Control
 signal closed
 signal open_howto
 signal open_settings
+signal open_options
 
 @onready var resume_button: Button = %ResumeButton
 @onready var howto_button: Button = %HowtoButton
@@ -20,6 +21,7 @@ func _ready() -> void:
 	invite_button.pressed.connect(func(): SteamService.open_invite_dialog())
 	howto_button.pressed.connect(func(): open_howto.emit(); _close())
 	settings_button.pressed.connect(func(): open_settings.emit(); _close())
+	%OptionsButton.pressed.connect(func(): open_options.emit(); _close())
 	leave_button.pressed.connect(func(): Net.leave())
 	quit_button.pressed.connect(func(): get_tree().quit())
 	var addr := Net.join_address()

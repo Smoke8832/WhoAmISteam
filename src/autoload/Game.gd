@@ -186,6 +186,7 @@ func _on_peer_disconnected(id: int) -> void:
 		players[id].ready = false
 		players[id].seat = -1
 		RoundManager.on_player_left(id)
+		print("[game] %s (%d) disconnected mid-round; slot held" % [player_name(id), id])
 		notice.emit("%s disconnected. Their seat is kept until the round ends." % player_name(id))
 	else:
 		players.erase(id)
@@ -246,6 +247,7 @@ func hello(name: String, customization: Dictionary, rejoin_token: String) -> voi
 				players[id] = p
 				RoundManager.on_player_rejoined(old_id, id)
 				restored = true
+				print("[game] rejoin: %s reclaimed slot %d as peer %d (state %s)" % [clean_name, old_id, id, state_name()])
 				notice.emit("%s is back." % clean_name)
 				break
 	if not restored:

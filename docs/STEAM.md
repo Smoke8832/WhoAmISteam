@@ -50,6 +50,22 @@ Why in-house transport: the official GodotSteam MultiplayerPeer ships only as a 
   3. Both should appear in the room; run a round. Check `%APPDATA%\Godot\app_userdata\Who Am I? Party\logs`
      or the console for `[steampeer] HELLO` / `WELCOME` lines.
 
+## Building and uploading (M8)
+
+1. Export templates: Godot 4.7.2 `Godot_v4.7.2-stable_export_templates.tpz` → extract
+   `windows_release_x86_64.exe`, `windows_debug_x86_64.exe` (+ `_console` variants, `version.txt`) into
+   `%APPDATA%\Godot\export_templates\4.7.2.stable\` (already done on the dev PC).
+2. `.\tools\export_windows.ps1` → `exports\windows\WhoAmIParty.exe` + `.pck` + `libgodotsteam...dll` +
+   `steam_api64.dll`. The script also launches the exe once as a LAN host to smoke-test it.
+3. Steamworks: create the app and a Windows depot; set the launch option to `WhoAmIParty.exe`.
+4. `.\tools\steam_upload.ps1 -AppId <id> -DepotId <depot> -Username <login> -Branch playtest`
+   (writes `exports\steam\app_build.vdf`, runs `steamcmd +run_app_build`). `steam_appid.txt` is excluded
+   from the depot on purpose: on Steam the client provides the App ID.
+5. In Steamworks set the build live on the Playtest app's default branch; invite testers.
+
+Before the first real upload: replace `APP_ID := 480` in `src/autoload/SteamService.gd` and the
+`steam_appid.txt` (dev only) with the real App ID, and bump `application/config/version` in `project.godot`.
+
 ## In-game Steam features (M6/M7)
 
 - Lobbies: `Steam.createLobby(LOBBY_TYPE_FRIENDS_ONLY, max_players)`, lobby data `version`, `settings`.

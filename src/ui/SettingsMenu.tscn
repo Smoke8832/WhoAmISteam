@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://src/ui/PauseMenu.gd" id="1_pause"]
+[ext_resource type="Script" path="res://src/ui/SettingsMenu.gd" id="1_opts"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.96, 0.95, 0.92, 1)
@@ -17,14 +17,14 @@ shadow_color = Color(0, 0, 0, 0.3)
 shadow_size = 14
 shadow_offset = Vector2(4, 6)
 
-[node name="PauseMenu" type="Control"]
+[node name="SettingsMenu" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_pause")
+script = ExtResource("1_opts")
 
 [node name="Dim" type="ColorRect" parent="."]
 layout_mode = 1
@@ -49,10 +49,10 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel"]
 layout_mode = 2
-theme_override_constants/margin_left = 36
-theme_override_constants/margin_top = 22
-theme_override_constants/margin_right = 36
-theme_override_constants/margin_bottom = 22
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 18
 
 [node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin"]
 layout_mode = 2
@@ -62,48 +62,25 @@ theme_override_constants/separation = 10
 layout_mode = 2
 theme_type_variation = &"HeaderLarge"
 theme_override_colors/font_color = Color(0.11, 0.1, 0.09, 1)
-text = "PAUSE_TITLE"
+text = "OPT_TITLE"
 horizontal_alignment = 1
 
-[node name="AddressLabel" type="Label" parent="Center/Panel/Margin/VBox"]
+[node name="Rows" type="VBoxContainer" parent="Center/Panel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.35, 0.33, 0.3, 1)
-text = ""
-horizontal_alignment = 1
+theme_override_constants/separation = 6
 
-[node name="ResumeButton" type="Button" parent="Center/Panel/Margin/VBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 0)
+[node name="Buttons" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
 layout_mode = 2
-text = "PAUSE_RESUME"
+theme_override_constants/separation = 12
+alignment = 1
 
-[node name="InviteButton" type="Button" parent="Center/Panel/Margin/VBox"]
+[node name="HowtoButton" type="Button" parent="Center/Panel/Margin/VBox/Buttons"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "PAUSE_INVITE"
+text = "OPT_SHOW_HOWTO"
 
-[node name="HowtoButton" type="Button" parent="Center/Panel/Margin/VBox"]
+[node name="CloseButton" type="Button" parent="Center/Panel/Margin/VBox/Buttons"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "MENU_HOWTO"
-
-[node name="SettingsButton" type="Button" parent="Center/Panel/Margin/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "SETTINGS_TITLE"
-
-[node name="OptionsButton" type="Button" parent="Center/Panel/Margin/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "MENU_OPTIONS"
-
-[node name="LeaveButton" type="Button" parent="Center/Panel/Margin/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "PAUSE_LEAVE"
-
-[node name="QuitButton" type="Button" parent="Center/Panel/Margin/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "MENU_QUIT"
+text = "CLOSE"

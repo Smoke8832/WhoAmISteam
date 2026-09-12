@@ -80,6 +80,11 @@ func play_music(file_name: String) -> void:
 	var stream := load(path)
 	if _music_player.stream == stream and _music_player.playing:
 		return
+	if stream is AudioStreamWAV:
+		var wav := stream as AudioStreamWAV
+		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		wav.loop_begin = 0
+		wav.loop_end = wav.data.size() / 2
 	_music_player.stream = stream
 	_music_player.play()
 

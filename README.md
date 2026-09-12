@@ -2,35 +2,53 @@
 
 The living-room guessing game, online. 2–8 friends walk around a cartoon living room, sit in a circle, stick a picture and a name on the next person's forehead, and ask yes/no questions until everyone knows who they are.
 
-Built with **Godot 4.7.2** (GDScript) and **GodotSteam 4.22.1**. Windows first.
+Built with **Godot 4.7.2** (GDScript) and **GodotSteam 4.22.1**. Windows first. Design doc: [docs/PLAN.md](docs/PLAN.md). Steam setup and release: [docs/STEAM.md](docs/STEAM.md).
 
-## Run it
+## Play it
+
+- **Steam friends**: start the game with Steam running → *Host a room (Steam friends)* → Esc → *Invite Steam friends* (or friends use *Join game* in their friends list).
+- **LAN / no Steam**: *Host a room (LAN)* on one PC, *Join* with the host's `ip:port` on the others (shown in the host's Esc menu).
+
+Controls: WASD move · Space jump · C crouch · E sit / pick up / wardrobe · click throw · V third person · T talk · F ready · Tab players · Enter chat · Esc menu. During guessing: Q ask, G "I know it!", Y / N / U vote.
+
+## Develop
 
 ```powershell
-# one host + two clients over ENet (no Steam needed), 40 seconds, bots play and save screenshots
-.\tools\run_local.ps1 -Clients 2 -Bot -Duration 40
+# one host + two bot clients over ENet, fast phases, screenshots into screenshots\<stamp>\
+.\tools\run_local.ps1 -Clients 2 -Bot -Fast -Duration 70
 
-# unit tests
+# unit tests (63)
 .\tools\run_tests.ps1
+
+# rejoin test (kills a client mid-round and relaunches it with the same token)
+.\tools\test_rejoin.ps1
+
+# Windows build -> exports\windows\ (needs the 4.7.2 export templates)
+.\tools\export_windows.ps1
+
+# character / UI / model previews
+godot_console --path . tools/CharacterViewer.tscn -- --closeup --out screenshots/chars.png
+godot_console --path . tools/UiViewer.tscn -- --scene res://src/ui/Customizer.tscn --out screenshots/ui.png
 ```
 
-Open the project in the Godot editor (`godot --path .`) to play by hand: **Host a room (LAN)** in one window, **Join** with `127.0.0.1` in another.
+Command-line flags (after `--`): `--host`, `--join <ip>`, `--port`, `--name`, `--bot`, `--fast`, `--no-steam`, `--steam-host`, `--steam-join <lobby>`, `--rejoin-token <t>`, `--screenshot-dir <dir>`, `--quit-after <s>`.
 
 ## Layout
 
-- `docs/PLAN.md` – the design and build plan (source of truth)
-- `docs/STEAM.md` – Steamworks setup, pinned versions, release checklist
-- `src/autoload/` – `Settings`, `Locale`, `Audio`, `Net`, `Game`, `Voice`
-- `src/net/` – transports (ENet / Steam), image transfer
-- `src/round/` – round rules, voting, scoring, image search
-- `src/player/` – controller, character rig, customization, post-it
-- `src/world/` – the living room, chairs, props
-- `src/ui/` – menus, HUD, panels
-- `tools/` – local launcher, test runner, bot
-- `tests/` – unit tests (`test_*.gd`, run by `tests/TestMain.tscn`)
+- `docs/` – plan and Steam notes
+- `src/autoload/` – `Settings`, `Locale`, `Audio`, `SteamService`, `Net`, `Game`, `Voice`
+- `src/net/` – ENet and Steam transports, `SteamPeer`
+- `src/round/` – `RoundManager` (phases, writing, votes, scoring), image search/normalize, famous names
+- `src/player/` – controller, `CharacterRig`, `FacePainter`, `PostIt`, customization
+- `src/world/` – `RoomBuilder`, living room, chairs, props, TV
+- `src/ui/` – menus, HUD, write panel, guess HUD, wardrobe, options, scoreboard
+- `src/shaders/` – toon shader, ink post-process
+- `tools/` – launchers, bot, generators, export/upload scripts
+- `tests/` – unit tests run by `tests/TestMain.tscn`
 
 ## Credits
 
 - Furniture: [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) (CC0)
 - Fonts: Patrick Hand, Nunito (OFL, via Google Fonts)
 - Steam integration: [GodotSteam](https://godotsteam.com) (MIT)
+- Pictures: Wikipedia / Wikimedia Commons thumbnails, fetched by each player at play time

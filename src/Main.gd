@@ -6,6 +6,7 @@ const PLAYER_SCENE := preload("res://src/player/Player.tscn")
 const LIVING_ROOM_SCENE := preload("res://src/world/LivingRoom.tscn")
 const BOT_SCRIPT := preload("res://tools/Bot.gd")
 const HOWTO_SCENE := preload("res://src/ui/HowToPlay.tscn")
+const OPTIONS_SCENE := preload("res://src/ui/SettingsMenu.tscn")
 
 @onready var world: Node3D = $World
 @onready var players_root: Node3D = $World/Players
@@ -29,6 +30,7 @@ func _ready() -> void:
 	Game.player_left.connect(_on_player_left)
 	Game.notice.connect(_on_notice)
 	main_menu.howto_requested.connect(_open_howto)
+	main_menu.options_requested.connect(_open_options)
 	_show_menu(true)
 	_apply_cli()
 	if bool(Settings.get_value("first_launch", true)) and not Settings.cli.bot and not Settings.cli.host and String(Settings.cli.join) == "":
@@ -41,6 +43,14 @@ func _open_howto() -> void:
 	var h := HOWTO_SCENE.instantiate()
 	h.name = "HowToPlay"
 	ui.add_child(h)
+
+
+func _open_options() -> void:
+	if ui.has_node("Options"):
+		return
+	var o := OPTIONS_SCENE.instantiate()
+	o.name = "Options"
+	ui.add_child(o)
 
 
 func _apply_cli() -> void:
@@ -114,7 +124,7 @@ func _load_level() -> void:
 	level = LIVING_ROOM_SCENE.instantiate()
 	level.name = "Level"
 	world.add_child(level)
-	Audio.play_music("lobby_loop.ogg")
+	Audio.play_music("lobby_loop.wav")
 
 
 func _unload_level() -> void:

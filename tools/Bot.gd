@@ -8,6 +8,7 @@ var _shots_taken := 0
 var _ready_sent := false
 var _start_sent := false
 var _wardrobe_done := false
+var _options_done := false
 
 const SHOT_TIMES := [4.0, 12.0, 30.0]
 
@@ -17,6 +18,12 @@ func _ready() -> void:
 	Customization.override_local(Customization.randomized())
 	Settings.data.third_person = false   # bots always start in first person (do not persist)
 	Game.state_changed.connect(_on_state_changed)
+	Game.snapshot_applied.connect(_on_first_snapshot, CONNECT_ONE_SHOT)
+
+
+func _on_first_snapshot() -> void:
+	var me: Dictionary = Game.player(Game.local_id())
+	print("[bot] first snapshot: state=%s participant=%s spectator=%s seat=%d" % [Game.state_name(), str(RoundManager.is_participant(Game.local_id())), str(me.get("spectator", false)), int(me.get("seat", -1))])
 
 
 func _process(delta: float) -> void:
@@ -69,6 +76,14 @@ func _process(delta: float) -> void:
 	if _voice_in <= 0.0 and Voice.enabled and Game.state != Game.State.MENU:
 		_voice_in = randf_range(6.0, 12.0)
 		_voice_burst()
+	# Options menu once, for a screenshot (lobby only).
+	if hud and not _options_done and _t > 22.0 and Game.state == Game.State.LOBBY and not hud.is_modal_open():
+		_options_done = true
+		hud.open_options()
+		await get_tree().create_timer(1.0).timeout
+		await _screenshot("options")
+		if hud.is_modal_open():
+			hud._modal._close()
 	# Guessing behaviour
 	if Game.state == Game.State.GUESSING:
 		_guessing_tick(delta)
