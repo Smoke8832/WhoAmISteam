@@ -6,11 +6,23 @@ var prop_nodes: Array = []
 var _spawns: Array[Transform3D] = []
 
 
+const TV_SCRIPT := preload("res://src/world/TvScreen.gd")
+
+var tv: Node = null
+
+
 func _ready() -> void:
 	var built := RoomBuilder.build(self)
 	chair_nodes = built.chairs
 	prop_nodes = built.props
 	_spawns = RoomBuilder.spawn_points()
+	var quad := get_node_or_null("Fixtures/TvScreen") as MeshInstance3D
+	if quad:
+		tv = Node.new()
+		tv.name = "Tv"
+		tv.set_script(TV_SCRIPT)
+		add_child(tv)
+		tv.setup(quad)
 
 
 func spawn_transform(slot: int) -> Transform3D:

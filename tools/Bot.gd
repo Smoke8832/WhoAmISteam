@@ -54,16 +54,16 @@ func _process(delta: float) -> void:
 		player.throw_held()
 	elif player.held_prop < 0 and player.look_target() is Prop and randf() < 0.2:
 		Game.req_grab_local((player.look_target() as Prop).prop_id)
-	# Open the wardrobe once for a screenshot, then close it.
+	# Open the wardrobe once for a screenshot, then close it. Only in the lobby.
 	var hud: Node = main.get("hud")
-	if hud and not _wardrobe_done and _t > 15.0:
+	if hud and not _wardrobe_done and _t > 15.0 and Game.state == Game.State.LOBBY and not hud.is_modal_open():
 		_wardrobe_done = true
 		hud.open_customizer()
 		await get_tree().create_timer(1.5).timeout
 		await _screenshot("wardrobe")
-		if hud.is_modal_open():
-			hud._customizer._on_random()
-			hud._customizer._on_save()
+		if hud.is_modal_open() and hud._modal.has_method("_on_random"):
+			hud._modal._on_random()
+			hud._modal._on_save()
 	# Lobby behaviour
 	if Game.state == Game.State.LOBBY:
 		if not _ready_sent and _t > 2.0:

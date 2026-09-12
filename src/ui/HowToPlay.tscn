@@ -1,0 +1,116 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/ui/HowToPlay.gd" id="1_howto"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(1, 0.88, 0.3, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.11, 0.1, 0.09, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 14
+shadow_offset = Vector2(4, 8)
+
+[node name="HowToPlay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_howto")
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.45)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Card" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(620, 380)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+
+[node name="Margin" type="MarginContainer" parent="Center/Card"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="Center/Card/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/Card/Margin/VBox"]
+layout_mode = 2
+theme_type_variation = &"HeaderLarge"
+theme_override_colors/font_color = Color(0.11, 0.1, 0.09, 1)
+text = "HOWTO_TITLE"
+horizontal_alignment = 1
+
+[node name="Icon" type="Label" parent="Center/Card/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.11, 0.1, 0.09, 1)
+theme_override_font_sizes/font_size = 72
+text = "✍️"
+horizontal_alignment = 1
+
+[node name="Text" type="Label" parent="Center/Card/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(540, 110)
+layout_mode = 2
+size_flags_vertical = 3
+theme_type_variation = &"HeaderSmall"
+theme_override_colors/font_color = Color(0.11, 0.1, 0.09, 1)
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Nav" type="HBoxContainer" parent="Center/Card/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PrevButton" type="Button" parent="Center/Card/Margin/VBox/Nav"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "◀"
+
+[node name="Step" type="Label" parent="Center/Card/Margin/VBox/Nav"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(70, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.11, 0.1, 0.09, 1)
+text = "1 / 4"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="NextButton" type="Button" parent="Center/Card/Margin/VBox/Nav"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "HOWTO_NEXT"
+
+[node name="CloseButton" type="Button" parent="Center/Card/Margin/VBox/Nav"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "CLOSE"

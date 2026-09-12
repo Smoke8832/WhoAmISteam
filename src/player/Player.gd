@@ -119,13 +119,16 @@ func _set_mouse_captured(captured: bool) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_local():
 		return
+	var hud := _hud()
+	if hud and hud.has_method("is_modal_open") and hud.is_modal_open():
+		if mouse_captured:
+			_set_mouse_captured(false)
+		return
 	if event is InputEventMouseMotion and mouse_captured:
 		var sens := float(Settings.get_value("mouse_sensitivity", 0.0025))
 		var inv := -1.0 if bool(Settings.get_value("invert_y", false)) else 1.0
 		yaw -= event.relative.x * sens
 		pitch = clampf(pitch - event.relative.y * sens * inv, -PITCH_LIMIT, PITCH_LIMIT)
-	elif event.is_action_pressed("menu"):
-		_set_mouse_captured(not mouse_captured)
 	elif event.is_action_pressed("toggle_camera"):
 		set_third_person(not third_person)
 	elif event.is_action_pressed("interact"):

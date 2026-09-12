@@ -15,7 +15,8 @@ param(
     [int]$Port = 7777,
     [string]$Godot = "$env:LOCALAPPDATA\Microsoft\WinGet\Links\godot_console.exe",
     [string]$ScreenshotDir = "",
-    [switch]$Headless
+    [switch]$Headless,
+    [switch]$Fast
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,6 +33,7 @@ function Start-Instance([string]$label, [string[]]$userArgs, [int]$x, [int]$y) {
     $args += $userArgs
     $args += @("--name", $label)
     if ($Bot) { $args += @("--bot", "--screenshot-dir", $ScreenshotDir) }
+    if ($Fast) { $args += "--fast" }
     if ($Duration -gt 0) { $args += @("--quit-after", "$Duration") }
     $out = Join-Path $logDir "$label.log"
     $err = Join-Path $logDir "$label.err.log"

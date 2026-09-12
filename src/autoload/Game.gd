@@ -227,6 +227,9 @@ func hello(name: String, customization: Dictionary, rejoin_token: String) -> voi
 	if not Net.is_host():
 		return
 	var id := multiplayer.get_remote_sender_id()
+	if rejoin_token != "" and _blocked_tokens.has(rejoin_token):
+		kicked.rpc_id(id, "KICKED")
+		return
 	var clean_name := sanitize_name(name)
 	var clean_custom := Customization.sanitize(customization)
 	# Rejoin: a held slot with the same rejoin token gets restored under the new peer id.
@@ -262,6 +265,38 @@ func hello(name: String, customization: Dictionary, rejoin_token: String) -> voi
 func kicked(reason: String) -> void:
 	notice.emit(reason)
 	Net.leave()
+
+
+var _blocked_tokens: Dictionary = {}
+
+
+## Client -> Host. Admin removes a player for this session.
+@rpc("any_peer", "call_remote", "reliable")
+func req_kick(peer_id: int) -> void:
+	if not Net.is_host():
+		return
+	if _sender_id() != HOST_ID or peer_id == HOST_ID or not players.has(peer_id):
+		return
+	var token := String(players[peer_id].get("rejoin_token", ""))
+	if token != "":
+		_blocked_tokens[token] = true
+	kicked.rpc_id(peer_id, "KICKED")
+	notice.emit("%s was removed from the room." % player_name(peer_id))
+	_release_props_of(peer_id)
+	players.erase(peer_id)
+	player_left.emit(peer_id)
+	players_changed.emit()
+	broadcast_snapshot()
+	await get_tree().create_timer(0.5).timeout
+	if multiplayer.multiplayer_peer and multiplayer.get_peers().has(peer_id):
+		multiplayer.multiplayer_peer.disconnect_peer(peer_id)
+
+
+func req_kick_local(peer_id: int) -> void:
+	if Net.is_host():
+		req_kick(peer_id)
+	else:
+		req_kick.rpc_id(HOST_ID, peer_id)
 
 
 ## Client -> Host.

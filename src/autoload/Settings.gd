@@ -18,6 +18,8 @@ var cli: Dictionary = {
 	"settings_path": "",
 	"quit_after": 0.0,
 	"window_pos": Vector2i(-1, -1),
+	"fast": false,
+	"rejoin_token": "",
 }
 
 var data: Dictionary = {
@@ -35,6 +37,7 @@ var data: Dictionary = {
 	"google_cx": "",
 	"third_person": false,
 	"first_launch": true,
+	"rejoin_token": "",
 }
 
 
@@ -65,6 +68,11 @@ func _parse_cli() -> void:
 				cli.bot = true
 			"--no-steam":
 				cli.no_steam = true
+			"--fast":
+				cli.fast = true
+			"--rejoin-token":
+				cli.rejoin_token = next
+				i += 1
 			"--screenshot-dir":
 				cli.screenshot_dir = next
 				i += 1
@@ -91,6 +99,14 @@ func load_settings() -> void:
 		data.player_name = cli.name
 	if data.player_name == "":
 		data.player_name = "Player%d" % (randi() % 900 + 100)
+	if String(cli.rejoin_token) != "":
+		data.rejoin_token = cli.rejoin_token   # dev: relaunch with the same token to test rejoin
+	elif String(data.rejoin_token) == "" or cli.bot:
+		# Random per install (bots: per process, so several bots on one PC do not collide).
+		var crypto := Crypto.new()
+		data.rejoin_token = crypto.generate_random_bytes(16).hex_encode()
+		if not cli.bot:
+			save_settings()
 	changed.emit()
 
 

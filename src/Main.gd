@@ -5,6 +5,7 @@ extends Node
 const PLAYER_SCENE := preload("res://src/player/Player.tscn")
 const LIVING_ROOM_SCENE := preload("res://src/world/LivingRoom.tscn")
 const BOT_SCRIPT := preload("res://tools/Bot.gd")
+const HOWTO_SCENE := preload("res://src/ui/HowToPlay.tscn")
 
 @onready var world: Node3D = $World
 @onready var players_root: Node3D = $World/Players
@@ -27,8 +28,19 @@ func _ready() -> void:
 	Game.player_joined.connect(_on_player_joined)
 	Game.player_left.connect(_on_player_left)
 	Game.notice.connect(_on_notice)
+	main_menu.howto_requested.connect(_open_howto)
 	_show_menu(true)
 	_apply_cli()
+	if bool(Settings.get_value("first_launch", true)) and not Settings.cli.bot and not Settings.cli.host and String(Settings.cli.join) == "":
+		_open_howto()
+
+
+func _open_howto() -> void:
+	if ui.has_node("HowToPlay"):
+		return
+	var h := HOWTO_SCENE.instantiate()
+	h.name = "HowToPlay"
+	ui.add_child(h)
 
 
 func _apply_cli() -> void:

@@ -321,6 +321,28 @@ static func _build_fixtures(root: Node3D) -> void:
 	frame.material_override = _mat(Color("8e8e8e"))
 	wb.add_child(frame)
 	wb.add_to_group("room")
+	# Rules written on the board in marker
+	var marker: Font = load("res://assets/fonts/PatrickHand-Regular.ttf")
+	var title := Label3D.new()
+	title.text = "HOW TO PLAY"
+	title.font = marker
+	title.font_size = 64
+	title.pixel_size = 0.0035
+	title.modulate = Color("1c3f8f")
+	title.position = Vector3(0, 0.52, 0.01)
+	wb.add_child(title)
+	var lines := ["1. Write a name for the player on your RIGHT.", "2. It gets stuck on their forehead.", "3. Ask yes/no questions. Everyone votes.", "4. Think you know? Say it! Others judge.", "5. First to guess wins the round."]
+	for i in lines.size():
+		var l := Label3D.new()
+		l.text = lines[i]
+		l.font = marker
+		l.font_size = 40
+		l.pixel_size = 0.0035
+		l.modulate = Color("1c1a17") if i % 2 == 0 else Color("b5352c")
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		l.position = Vector3(-1.0, 0.28 - i * 0.2, 0.01)
+		l.width = 600
+		wb.add_child(l)
 	fx.add_child(wb)
 	# Wardrobe mirror in the south-west corner (M2 opens the customizer)
 	var wardrobe := StaticBody3D.new()
