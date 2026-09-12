@@ -6,6 +6,7 @@ const CUSTOMIZER_SCENE := preload("res://src/ui/Customizer.tscn")
 const SETTINGS_SCENE := preload("res://src/ui/LobbySettingsPanel.tscn")
 const HOWTO_SCENE := preload("res://src/ui/HowToPlay.tscn")
 const PAUSE_SCENE := preload("res://src/ui/PauseMenu.tscn")
+const WRITE_SCENE := preload("res://src/ui/WritePanel.tscn")
 
 @onready var status_label: Label = %StatusLabel
 @onready var notice_label: Label = %NoticeLabel
@@ -95,9 +96,26 @@ func _on_state_changed(_old: int, new_state: int) -> void:
 		Game.State.COUNTDOWN:
 			show_notice(tr("NOTICE_ROUND_START"))
 			Audio.play("countdown")
+		Game.State.WRITING:
+			if RoundManager.is_participant(Game.local_id()):
+				_close_modal()
+				_open_modal(WRITE_SCENE)
+		Game.State.STICKING:
+			if is_modal_open() and _modal.has_method("bot_fill"):
+				_close_modal()
+		Game.State.REVEAL:
+			var mine: Dictionary = RoundManager.r.get("reveal", {}).get(Game.local_id(), {})
+			if not mine.is_empty():
+				show_notice(Locale.f("REVEAL_YOU_WERE", {"name": String(mine.get("name", "?"))}))
 		Game.State.LOBBY:
 			if _old != Game.State.MENU:
 				show_notice(tr("NOTICE_BACK_TO_LOBBY"))
+
+
+func _close_modal() -> void:
+	if is_modal_open():
+		_modal.queue_free()
+		_modal = null
 
 
 func _refresh() -> void:

@@ -150,7 +150,7 @@ func _build_face() -> void:
 	_face.albedo_mix = 1.0
 	_face.upper_fade = 0.0
 	_face.lower_fade = 0.0
-	_face.cull_mask = 0xFFFFF & ~PostIt.LAYER_BIT   # never project onto the post-it
+	_face.cull_mask = 0xFFFFF & ~PostIt.LAYER_BIT & ~(1 << 11)   # never onto the post-it or the ink quad
 	_head_pivot.add_child(_face)
 
 

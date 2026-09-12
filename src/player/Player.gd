@@ -87,6 +87,9 @@ func _ready() -> void:
 	emote_bubble.visible = false
 	Game.players_changed.connect(_on_players_changed)
 	Game.players_changed.connect(_refresh_name_tag)
+	RoundManager.round_changed.connect(_refresh_postit)
+	RoundManager.postit_updated.connect(func(_t): _refresh_postit())
+	Game.state_changed.connect(func(_o, _n): _refresh_postit())
 	spring_arm.add_excluded_object(get_rid())
 	interact_ray.add_exception(self)
 	if is_local() and not Settings.cli.bot:
@@ -102,10 +105,13 @@ func _apply_camera_mode() -> void:
 	var local := is_local()
 	camera.current = local and not third_person
 	tp_camera.current = local and third_person
-	# Layer 2 = own body, hidden from the first-person camera only.
+	# Visual layers: 1 world + other players, 2 own body (+ own post-it), 11 (1024) all post-its
+	# (kept off the face decal), 12 (2048) the ink post-process quads.
+	# The first-person camera skips 2 and 11 so the own post-it never floats in front of the lens;
+	# other players' post-its are still visible through layer 1.
 	rig.set_visual_layers(2 if local else 1)
-	camera.cull_mask = 1 | (1 << 10)
-	tp_camera.cull_mask = 1 | 2 | (1 << 10)
+	camera.cull_mask = 1 | (1 << 11)
+	tp_camera.cull_mask = 1 | 2 | (1 << 10) | (1 << 11)
 	fp_postfx.visible = camera.current
 	tp_postfx.visible = tp_camera.current
 	name_tag.visible = not local or third_person
@@ -411,6 +417,44 @@ func _apply_seat() -> void:
 	_last_chair = seat_chair if seated else _last_chair
 
 var _last_chair: int = -1
+
+
+# ----------------------------------------------------------------- post-it
+
+var _postit_shown := false
+var _postit_solved := false
+
+func _refresh_postit() -> void:
+	if rig == null or rig.postit == null:
+		return
+	var v := RoundManager.postit_view(peer_id)
+	var p: PostIt = rig.postit
+	if not v.visible:
+		if _postit_shown:
+			_postit_shown = false
+			_postit_solved = false
+			p.visible = false
+			p.reset()
+		return
+	if not _postit_shown:
+		_postit_shown = true
+		p.reset()
+		p.visible = true
+		p.scale = Vector3.ONE * 0.05
+		var tw := create_tween()
+		tw.tween_property(p, "scale", Vector3.ONE, 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		Audio.play_at("postit_stick", global_position + Vector3(0, 1.6, 0), get_parent())
+	if v.blank:
+		p.set_blank()
+	elif v.texture != null:
+		p.set_picture(v.texture)
+		p.set_label(v.name)
+	else:
+		p.set_text_only(v.name)
+	if v.solved and not _postit_solved:
+		_postit_solved = true
+		p.flip_solved()
+		Audio.play_at("confetti", global_position + Vector3(0, 1.6, 0), get_parent())
 
 
 # ------------------------------------------------------------------ emotes

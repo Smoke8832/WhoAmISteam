@@ -255,6 +255,8 @@ func hello(name: String, customization: Dictionary, rejoin_token: String) -> voi
 			kicked.rpc_id(id, "LOBBY_FULL")
 			return
 		players[id] = p
+		if state != State.LOBBY:
+			RoundManager.on_peer_joined_mid_round(id)
 	player_joined.emit(id)
 	players_changed.emit()
 	broadcast_snapshot()
@@ -290,6 +292,12 @@ func req_kick(peer_id: int) -> void:
 	await get_tree().create_timer(0.5).timeout
 	if multiplayer.multiplayer_peer and multiplayer.get_peers().has(peer_id):
 		multiplayer.multiplayer_peer.disconnect_peer(peer_id)
+
+
+## Host: remove a peer that broke the protocol repeatedly.
+func _kick_for_violation(peer_id: int) -> void:
+	if Net.is_host() and players.has(peer_id) and peer_id != HOST_ID:
+		req_kick(peer_id)
 
 
 func req_kick_local(peer_id: int) -> void:

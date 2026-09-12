@@ -84,6 +84,7 @@ func _ready() -> void:
 	q.size = Vector2(2, 2)
 	fx.mesh = q
 	fx.extra_cull_margin = 16384.0
+	fx.layers = 1 << 11
 	fx.material_override = load("res://src/shaders/ink_post.tres")
 	cam.add_child(fx)
 	var light := DirectionalLight3D.new()
