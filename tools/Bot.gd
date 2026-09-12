@@ -64,6 +64,9 @@ func _process(delta: float) -> void:
 		if hud.is_modal_open() and hud._modal.has_method("_on_random"):
 			hud._modal._on_random()
 			hud._modal._on_save()
+	# Guessing behaviour
+	if Game.state == Game.State.GUESSING:
+		_guessing_tick(delta)
 	# Lobby behaviour
 	if Game.state == Game.State.LOBBY:
 		if not _ready_sent and _t > 2.0:
@@ -93,6 +96,8 @@ func _on_state_changed(_old: int, new_state: int) -> void:
 	if new_state == Game.State.GUESSING:
 		await get_tree().create_timer(1.5).timeout
 		_screenshot("guessing_late")
+	if new_state == Game.State.REVEAL:
+		print("[scores] " + RoundManager.describe_scores().replace("\n", " | "))
 	_screenshot(Game.STATE_NAMES[new_state].to_lower())
 
 
@@ -140,6 +145,38 @@ func _generated_picture() -> PackedByteArray:
 				if (x - cx) * (x - cx) + (y - cy) * (y - cy) < rad * rad:
 					img.set_pixel(x, y, col)
 	return img.save_png_to_buffer()
+
+
+var _act_in := 0.0
+var _vote_shot_done := false
+
+## Guesser: ask, sometimes claim. Voter: answer after a short think.
+func _guessing_tick(delta: float) -> void:
+	_act_in -= delta
+	if _act_in > 0.0:
+		return
+	var v := RoundManager.open_vote()
+	var fast: bool = Settings.cli.fast
+	if RoundManager.is_my_turn() and v.is_empty():
+		var asked := int(RoundManager.r.get("questions_this_turn", 0))
+		if asked >= 1 and randf() < 0.35:
+			print("[bot] claiming a guess")
+			RoundManager.claim_local()
+		else:
+			RoundManager.ask_local()
+		_act_in = randf_range(0.6, 1.5) if fast else randf_range(2.0, 4.0)
+	elif RoundManager.can_vote() and RoundManager.my_vote() == null:
+		if String(v.kind) == "answer":
+			var roll := randf()
+			RoundManager.vote_answer_local(1 if roll < 0.6 else (-1 if roll < 0.9 else 0))
+		else:
+			RoundManager.vote_guess_local(randf() < 0.6)
+		if not _vote_shot_done:
+			_vote_shot_done = true
+			_screenshot("vote")
+		_act_in = randf_range(0.2, 0.7) if fast else randf_range(0.8, 2.5)
+	else:
+		_act_in = 0.3
 
 
 ## Turn toward the TV for a moment so its screen shows up in a screenshot.

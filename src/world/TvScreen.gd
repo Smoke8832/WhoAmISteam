@@ -131,10 +131,19 @@ func refresh() -> void:
 			var g := RoundManager.current_guesser()
 			_header.text = Locale.f("TV_TURN", {"name": Game.player_name(g)})
 			var v: Dictionary = RoundManager.r.get("vote", {})
-			if v.is_empty():
+			var res := RoundManager.last_result()
+			if not res.is_empty():
+				_body.text = RoundManager.describe_result(res)
+			elif v.is_empty():
 				_body.text = tr("TV_ASK")
 			else:
 				_body.text = RoundManager.describe_vote(v)
+			var solved: Dictionary = RoundManager.r.get("solved", {})
+			if not solved.is_empty():
+				var names: Array[String] = []
+				for id in solved.keys():
+					names.append("%s #%d" % [Game.player_name(int(id)), int(solved[id])])
+				_body.text += "\n\n" + tr("TV_SOLVED") + " " + ", ".join(names)
 		Game.State.REVEAL:
 			_header.text = tr("STATE_REVEAL")
 			_body.text = RoundManager.describe_scores()

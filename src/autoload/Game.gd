@@ -185,6 +185,7 @@ func _on_peer_disconnected(id: int) -> void:
 		players[id].held = true
 		players[id].ready = false
 		players[id].seat = -1
+		RoundManager.on_player_left(id)
 		notice.emit("%s disconnected. Their seat is kept until the round ends." % player_name(id))
 	else:
 		players.erase(id)

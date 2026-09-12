@@ -297,9 +297,10 @@ static func _build_fixtures(root: Node3D) -> void:
 	var tv := MeshInstance3D.new()
 	tv.name = "TvScreen"
 	var quad := QuadMesh.new()
-	quad.size = Vector2(1.3, 0.78)
+	quad.size = Vector2(1.22, 0.7)
 	tv.mesh = quad
-	tv.position = Vector3(0.0, 1.07, -4.53)
+	# Just in front of the Kenney TV's own screen surface (model front is at z ~ -4.42).
+	tv.position = Vector3(0.0, 1.08, -4.405)
 	tv.material_override = ToonMaterials.make(Color("101418"), null, Color("1c2a3a"), 0.6)
 	fx.add_child(tv)
 	# Whiteboard on the west wall (M3 draws the rules)

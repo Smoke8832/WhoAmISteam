@@ -1,0 +1,155 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/ui/GuessHud.gd" id="1_guess"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.96, 0.95, 0.92, 0.92)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.11, 0.1, 0.09, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.25)
+shadow_size = 10
+shadow_offset = Vector2(3, 5)
+
+[node name="GuessHud" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_guess")
+
+[node name="ResultLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -160.0
+offset_right = 400.0
+offset_bottom = -90.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(400, 35)
+theme_type_variation = &"HeaderLarge"
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bottom" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -330.0
+offset_top = -150.0
+offset_right = 330.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="Bottom"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Bottom/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Header" type="HBoxContainer" parent="Bottom/Margin/VBox"]
+layout_mode = 2
+
+[node name="TurnLabel" type="Label" parent="Bottom/Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeaderMedium"
+theme_override_colors/font_color = Color(0.11, 0.1, 0.09, 1)
+text = "Sarah's turn"
+
+[node name="TimerLabel" type="Label" parent="Bottom/Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HeaderMedium"
+theme_override_colors/font_color = Color(0.7, 0.2, 0.15, 1)
+text = "60s"
+
+[node name="EndButton" type="Button" parent="Bottom/Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "GUESS_END_ROUND"
+
+[node name="SubLabel" type="Label" parent="Bottom/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.33, 0.3, 1)
+text = ""
+autowrap_mode = 3
+
+[node name="GuesserRow" type="HBoxContainer" parent="Bottom/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="AskButton" type="Button" parent="Bottom/Margin/VBox/GuesserRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 40)
+layout_mode = 2
+text = "GUESS_ASK"
+
+[node name="ClaimButton" type="Button" parent="Bottom/Margin/VBox/GuesserRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 40)
+layout_mode = 2
+text = "GUESS_CLAIM"
+
+[node name="VoteRow" type="HBoxContainer" parent="Bottom/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="YesButton" type="Button" parent="Bottom/Margin/VBox/VoteRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 44)
+layout_mode = 2
+text = "VOTE_YES"
+
+[node name="NoButton" type="Button" parent="Bottom/Margin/VBox/VoteRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 44)
+layout_mode = 2
+text = "VOTE_NO"
+
+[node name="ShrugButton" type="Button" parent="Bottom/Margin/VBox/VoteRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 44)
+layout_mode = 2
+text = "VOTE_SHRUG"
+
+[node name="TallyLabel" type="Label" parent="Bottom/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.11, 0.1, 0.09, 1)
+text = ""
+horizontal_alignment = 1

@@ -61,6 +61,8 @@ func _process(delta: float) -> void:
 		return
 	if Game.state == Game.State.WRITING:
 		_expire_pending_images()
+	if Game.state == Game.State.GUESSING:
+		_tick_guessing(delta)
 	if Game.seconds_left <= 0.0:
 		_on_phase_timer_end()
 
@@ -135,10 +137,10 @@ func begin_guessing() -> void:
 		_:
 			dur = _scaled(60.0 * 60.0)   # effectively unbounded; ends by rule
 	if Settings.cli.fast:
-		dur = minf(dur, 15.0)
+		dur = minf(dur, 45.0)
 	r.turn_index = 0
-	_start_turn()
 	Game.host_set_state(Game.State.GUESSING, dur)
+	_start_turn()
 
 
 func _on_guessing_timer_end() -> void:
@@ -176,15 +178,6 @@ func end_round() -> void:
 
 
 # ---------------------------------------------------------- host: guessing
-# (turn handling, votes and scoring are completed in M5; the structure is here so the
-#  state machine and snapshots are final)
-
-func _start_turn() -> void:
-	r.vote = {}
-	if r.turn_order.is_empty():
-		return
-	r.turn_index = r.turn_index % r.turn_order.size()
-
 
 func current_guesser() -> int:
 	var order: Array = r.get("turn_order", [])
@@ -649,3 +642,393 @@ func postit_view(target: int) -> Dictionary:
 		out.name = String(r.reveal[target].get("name", out.name))
 	out.texture = images.get(target, null)
 	return out
+
+
+# ================================================================= guessing
+# Classic mode. The guesser asks out loud; everyone else votes YES / NO / shrug.
+# NO passes the turn (ties count as NO). "I know it!" opens a guess vote for everyone else;
+# the writer's vote counts double; tie = wrong. Correct = solved; points by solve order.
+
+const VOTE_YES := 1
+const VOTE_NO := -1
+const VOTE_SHRUG := 0
+const WRITER_WEIGHT := 2
+const WRITER_BONUS_TURNS := 3
+const RESULT_FLASH_S := 2.5
+
+signal turn_changed(guesser: int)
+signal result_shown(result: Dictionary)
+
+var _result_timer := 0.0
+
+
+# ----- pure rules (unit-tested)
+
+## votes: voter -> -1/0/1. -> "YES" | "NO" | "NONE"
+static func resolve_answer(votes: Dictionary) -> String:
+	var yes := 0
+	var no := 0
+	for v in votes.values():
+		if int(v) > 0:
+			yes += 1
+		elif int(v) < 0:
+			no += 1
+	if yes == 0 and no == 0:
+		return "NONE"
+	return "YES" if yes > no else "NO"
+
+
+## votes: voter -> bool. The writer's vote weighs double. Tie or no votes = wrong.
+static func resolve_guess(votes: Dictionary, writer: int) -> bool:
+	var yes_w := 0
+	var no_w := 0
+	for voter in votes.keys():
+		var w := WRITER_WEIGHT if int(voter) == writer else 1
+		if bool(votes[voter]):
+			yes_w += w
+		else:
+			no_w += w
+	return yes_w > no_w
+
+
+static func score_for_rank(rank: int) -> int:
+	return maxi(1, 6 - rank)
+
+
+# ----- host: turns
+
+func _eligible_guessers() -> Array:
+	var out: Array = []
+	for id in r.turn_order:
+		var p: Dictionary = Game.players.get(id, {})
+		if p.is_empty() or not p.get("connected", false):
+			continue
+		if r.solved.has(id):
+			continue
+		out.append(id)
+	return out
+
+
+func _start_turn() -> void:
+	r.vote = {}
+	var order: Array = r.turn_order
+	if order.is_empty():
+		return
+	# Find the next eligible guesser starting at turn_index.
+	var n := order.size()
+	var found := false
+	for i in n:
+		var idx := (int(r.turn_index) + i) % n
+		var id := int(order[idx])
+		var p: Dictionary = Game.players.get(id, {})
+		if p.is_empty() or not p.get("connected", false) or r.solved.has(id):
+			continue
+		if String(Game.settings.round_end_mode) == LobbySettings.ROUND_END_MAX_TURNS and int(r.turns_used.get(id, 0)) >= int(Game.settings.max_turns_per_player):
+			continue
+		r.turn_index = idx
+		found = true
+		break
+	if not found:
+		begin_reveal()
+		return
+	var g := current_guesser()
+	r.turns_used[g] = int(r.turns_used.get(g, 0)) + 1
+	r.turn_seconds_left = _scaled(float(Game.settings.turn_timer_s))
+	r.questions_this_turn = 0
+	turn_changed.emit(g)
+	Game.broadcast_snapshot()
+	round_changed.emit()
+
+
+func _pass_turn() -> void:
+	r.turn_index = (int(r.turn_index) + 1) % maxi(1, r.turn_order.size())
+	if _round_should_end():
+		begin_reveal()
+		return
+	_start_turn()
+
+
+func _round_should_end() -> bool:
+	if _eligible_guessers().is_empty():
+		return true
+	if String(Game.settings.round_end_mode) == LobbySettings.ROUND_END_MAX_TURNS:
+		var cap := int(Game.settings.max_turns_per_player)
+		for id in _eligible_guessers():
+			if int(r.turns_used.get(id, 0)) < cap:
+				return false
+		return true
+	return false
+
+
+func _tick_guessing(delta: float) -> void:
+	# Host-side timers for the turn and the open vote.
+	if not r.vote.is_empty():
+		r.vote.seconds_left = float(r.vote.seconds_left) - delta
+		if float(r.vote.seconds_left) <= 0.0:
+			_resolve_vote()
+	r.turn_seconds_left = float(r.turn_seconds_left) - delta
+	if float(r.turn_seconds_left) <= 0.0:
+		_set_result("timeout", current_guesser())
+		_pass_turn()
+	if _result_timer > 0.0:
+		_result_timer -= delta
+		if _result_timer <= 0.0 and r.has("last_result"):
+			r.erase("last_result")
+			Game.broadcast_snapshot()
+			round_changed.emit()
+
+
+func _set_result(kind: String, guesser: int, extra: Dictionary = {}) -> void:
+	var res := {"kind": kind, "guesser": guesser, "seq": int(r.get("result_seq", 0)) + 1}
+	res.merge(extra)
+	r.last_result = res
+	r.result_seq = res.seq
+	_result_timer = RESULT_FLASH_S
+	print("[round] %s" % describe_result(res))
+	result_shown.emit(res)
+
+
+func _eligible_voters(guesser: int) -> Array:
+	var out: Array = []
+	for id in Game.connected_player_ids():
+		if id != guesser:
+			out.append(id)
+	return out
+
+
+# ----- host: votes
+
+func _open_answer_vote(guesser: int) -> void:
+	r.vote = {"kind": "answer", "guesser": guesser, "votes": {}, "seconds_left": _scaled(float(Game.settings.answer_vote_window_s))}
+	r.questions_this_turn = int(r.get("questions_this_turn", 0)) + 1
+	vote_changed.emit()
+	Game.broadcast_snapshot()
+	round_changed.emit()
+
+
+func _open_guess_vote(guesser: int) -> void:
+	r.vote = {"kind": "guess", "guesser": guesser, "votes": {}, "seconds_left": _scaled(float(Game.settings.guess_vote_window_s))}
+	vote_changed.emit()
+	Game.broadcast_snapshot()
+	round_changed.emit()
+
+
+func _resolve_vote() -> void:
+	if r.vote.is_empty():
+		return
+	var v: Dictionary = r.vote
+	var guesser := int(v.guesser)
+	var votes: Dictionary = v.votes
+	r.vote = {}
+	if String(v.kind) == "answer":
+		var res := resolve_answer(votes)
+		_set_result("answer", guesser, {"answer": res})
+		if res == "NO":
+			_pass_turn()
+			return
+	else:
+		var correct := resolve_guess(votes, writer_of(guesser))
+		if correct:
+			_mark_solved(guesser)
+			_set_result("guess", guesser, {"correct": true, "rank": int(r.solved[guesser]), "name": String(r.names[guesser].name)})
+			if _round_should_end():
+				begin_reveal()
+				return
+			_pass_turn()
+			return
+		_set_result("guess", guesser, {"correct": false})
+		_pass_turn()
+		return
+	vote_changed.emit()
+	Game.broadcast_snapshot()
+	round_changed.emit()
+
+
+func _mark_solved(peer_id: int) -> void:
+	var rank: int = r.solved.size() + 1
+	r.solved[peer_id] = rank
+	if Game.players.has(peer_id):
+		Game.players[peer_id].score = int(Game.players[peer_id].score) + score_for_rank(rank)
+	var writer := writer_of(peer_id)
+	if writer != 0 and Game.players.has(writer) and int(r.turns_used.get(peer_id, 0)) <= WRITER_BONUS_TURNS:
+		Game.players[writer].score = int(Game.players[writer].score) + 1
+	_reveal_to(peer_id)
+	solved.emit(peer_id, rank)
+	Game.players_changed.emit()
+
+
+## Host: a participant left mid-round.
+func on_player_left(peer_id: int) -> void:
+	if not Net.is_host() or Game.state != Game.State.GUESSING:
+		return
+	if current_guesser() == peer_id:
+		r.vote = {}
+		_pass_turn()
+	elif not r.vote.is_empty():
+		_check_vote_complete()
+
+
+func _check_vote_complete() -> void:
+	if r.vote.is_empty():
+		return
+	var voters := _eligible_voters(int(r.vote.guesser))
+	var all_in := true
+	for id in voters:
+		if not r.vote.votes.has(id):
+			all_in = false
+			break
+	if all_in:
+		_resolve_vote()
+
+
+# ----- RPCs
+
+@rpc("any_peer", "call_remote", "reliable")
+func req_ask() -> void:
+	if not Net.is_host() or Game.state != Game.State.GUESSING:
+		return
+	var sender := Game._sender_id()
+	if sender != current_guesser() or not r.vote.is_empty():
+		return
+	_open_answer_vote(sender)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func req_claim() -> void:
+	if not Net.is_host() or Game.state != Game.State.GUESSING:
+		return
+	var sender := Game._sender_id()
+	if sender != current_guesser() or not r.vote.is_empty():
+		return
+	_open_guess_vote(sender)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func vote_answer(value: int) -> void:
+	if not Net.is_host() or Game.state != Game.State.GUESSING or r.vote.is_empty():
+		return
+	if String(r.vote.kind) != "answer":
+		return
+	var sender := Game._sender_id()
+	if sender == int(r.vote.guesser) or not (sender in _eligible_voters(int(r.vote.guesser))):
+		return
+	r.vote.votes[sender] = clampi(value, -1, 1)
+	vote_changed.emit()
+	_check_vote_complete()
+	Game.broadcast_snapshot()
+	round_changed.emit()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func vote_guess(correct: bool) -> void:
+	if not Net.is_host() or Game.state != Game.State.GUESSING or r.vote.is_empty():
+		return
+	if String(r.vote.kind) != "guess":
+		return
+	var sender := Game._sender_id()
+	if sender == int(r.vote.guesser) or not (sender in _eligible_voters(int(r.vote.guesser))):
+		return
+	r.vote.votes[sender] = correct
+	vote_changed.emit()
+	_check_vote_complete()
+	Game.broadcast_snapshot()
+	round_changed.emit()
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func req_end_round() -> void:
+	if not Net.is_host() or Game.state != Game.State.GUESSING:
+		return
+	if Game._sender_id() != Game.HOST_ID:
+		return
+	begin_reveal()
+
+
+# ----- client API
+
+func ask_local() -> void:
+	if Net.is_host():
+		req_ask()
+	else:
+		req_ask.rpc_id(Game.HOST_ID)
+
+
+func claim_local() -> void:
+	if Net.is_host():
+		req_claim()
+	else:
+		req_claim.rpc_id(Game.HOST_ID)
+
+
+func vote_answer_local(value: int) -> void:
+	if Net.is_host():
+		vote_answer(value)
+	else:
+		vote_answer.rpc_id(Game.HOST_ID, value)
+
+
+func vote_guess_local(correct: bool) -> void:
+	if Net.is_host():
+		vote_guess(correct)
+	else:
+		vote_guess.rpc_id(Game.HOST_ID, correct)
+
+
+func end_round_local() -> void:
+	if Net.is_host():
+		req_end_round()
+	else:
+		req_end_round.rpc_id(Game.HOST_ID)
+
+
+# ----- client helpers
+
+func is_my_turn() -> bool:
+	return Game.state == Game.State.GUESSING and current_guesser() == Game.local_id()
+
+
+func open_vote() -> Dictionary:
+	return r.get("vote", {})
+
+
+func my_vote() -> Variant:
+	var v := open_vote()
+	if v.is_empty():
+		return null
+	return v.votes.get(Game.local_id(), null)
+
+
+func can_vote() -> bool:
+	var v := open_vote()
+	if v.is_empty() or Game.state != Game.State.GUESSING:
+		return false
+	var me := Game.local_id()
+	if me == int(v.guesser):
+		return false
+	var p: Dictionary = Game.player(me)
+	return not p.is_empty() and p.get("connected", true)
+
+
+func last_result() -> Dictionary:
+	return r.get("last_result", {})
+
+
+## Human-readable one-liner for a result (HUD flash + TV).
+func describe_result(res: Dictionary) -> String:
+	var who := Game.player_name(int(res.get("guesser", 0)))
+	match String(res.get("kind", "")):
+		"answer":
+			match String(res.get("answer", "")):
+				"YES":
+					return tr("RESULT_YES")
+				"NO":
+					return Locale.f("RESULT_NO", {"name": who})
+				_:
+					return tr("RESULT_NONE")
+		"guess":
+			if bool(res.get("correct", false)):
+				return Locale.f("RESULT_CORRECT", {"name": who, "rank": int(res.get("rank", 1)), "who": String(res.get("name", ""))})
+			return Locale.f("RESULT_WRONG", {"name": who})
+		"timeout":
+			return Locale.f("RESULT_TIMEOUT", {"name": who})
+	return ""
