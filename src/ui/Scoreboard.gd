@@ -27,6 +27,7 @@ func refresh() -> void:
 	header.add_child(_cell(tr("COL_PLAYER"), 240, true))
 	header.add_child(_cell(tr("COL_STATUS"), 180, true))
 	header.add_child(_cell(tr("COL_SCORE"), 90, true))
+	header.add_child(_cell(tr("COL_VOICE"), 90, true))
 	if Game.is_admin():
 		header.add_child(_cell("", 90, true))
 	rows.add_child(header)
@@ -37,6 +38,12 @@ func refresh() -> void:
 		row.add_child(_cell(name, 240))
 		row.add_child(_cell(_status(id, p), 180))
 		row.add_child(_cell(str(int(p.score)), 90))
+		if id != Game.local_id():
+			var mute := Button.new()
+			mute.text = tr("UNMUTE") if Voice.is_muted(id) else tr("MUTE")
+			mute.custom_minimum_size = Vector2(90, 0)
+			mute.pressed.connect(func(): Voice.set_muted(id, not Voice.is_muted(id)); refresh())
+			row.add_child(mute)
 		if Game.is_admin() and id != Game.HOST_ID:
 			var kick := Button.new()
 			kick.text = tr("KICK")

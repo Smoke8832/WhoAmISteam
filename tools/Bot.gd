@@ -64,6 +64,11 @@ func _process(delta: float) -> void:
 		if hud.is_modal_open() and hud._modal.has_method("_on_random"):
 			hud._modal._on_random()
 			hud._modal._on_save()
+	# Fake voice: a short tone burst now and then exercises the relay + playback pipeline.
+	_voice_in -= delta
+	if _voice_in <= 0.0 and Voice.enabled and Game.state != Game.State.MENU:
+		_voice_in = randf_range(6.0, 12.0)
+		_voice_burst()
 	# Guessing behaviour
 	if Game.state == Game.State.GUESSING:
 		_guessing_tick(delta)
@@ -149,6 +154,16 @@ func _generated_picture() -> PackedByteArray:
 
 var _act_in := 0.0
 var _vote_shot_done := false
+var _voice_in := 5.0
+
+
+func _voice_burst() -> void:
+	for i in 16:   # ~0.65 s of tone in 40 ms frames
+		if not Net.active:
+			return
+		Voice.send_test_tone(Voice.PCM_FRAME_S, 330.0 + 110.0 * (i % 3))
+		await get_tree().create_timer(Voice.PCM_FRAME_S).timeout
+	print("[bot] voice burst sent; speaking=%s level=%.2f" % [str(Voice.is_speaking(Game.local_id())), Voice.level_of(Game.local_id())])
 
 ## Guesser: ask, sometimes claim. Voter: answer after a short think.
 func _guessing_tick(delta: float) -> void:

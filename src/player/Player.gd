@@ -87,6 +87,7 @@ func _ready() -> void:
 	emote_bubble.visible = false
 	Game.players_changed.connect(_on_players_changed)
 	Game.players_changed.connect(_refresh_name_tag)
+	Voice.speaking_changed.connect(func(id, _s): if id == peer_id: _refresh_name_tag())
 	RoundManager.round_changed.connect(_refresh_postit)
 	RoundManager.postit_updated.connect(func(_t): _refresh_postit())
 	Game.state_changed.connect(func(_o, _n): _refresh_postit())
@@ -97,7 +98,9 @@ func _ready() -> void:
 
 
 func _refresh_name_tag() -> void:
-	name_tag.text = Game.player_name(peer_id)
+	var speaking := Voice.is_speaking(peer_id)
+	var muted := Voice.is_muted(peer_id)
+	name_tag.text = Game.player_name(peer_id) + ("  🔊" if speaking else "") + ("  🔇" if muted else "")
 	name_tag.visible = not is_local() or third_person
 
 
@@ -287,6 +290,9 @@ func _animate(delta: float) -> void:
 	body.position.y = lerpf(body.position.y, -0.25 if anim == Anim.SIT else 0.0, clampf(delta * 10.0, 0.0, 1.0))
 	rig.set_head_pitch(pitch)
 	rig.set_anim(anim, delta)
+	var lvl := Voice.level_of(peer_id)
+	if lvl > 0.0:
+		rig.set_talking(lvl)
 	if _emote_timer > 0.0:
 		_emote_timer -= delta
 		if _emote_timer <= 0.0:

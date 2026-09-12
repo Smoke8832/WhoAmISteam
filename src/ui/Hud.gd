@@ -37,6 +37,7 @@ func _ready() -> void:
 	Game.players_changed.connect(_refresh)
 	Game.state_changed.connect(_on_state_changed)
 	Game.snapshot_applied.connect(_refresh)
+	Voice.speaking_changed.connect(func(_id, _s): _refresh())
 	notice_label.modulate.a = 0.0
 	scoreboard.visible = false
 	_refresh()
@@ -141,6 +142,8 @@ func _refresh() -> void:
 			flags += " (%s)" % tr("STATUS_SPECTATOR")
 		elif in_lobby and p.get("ready", false):
 			flags += " ✓"
+		if Voice.is_speaking(id):
+			flags += " 🔊"
 		lines.append("%s%s" % [p.name, flags])
 	for id in Game.players.keys():
 		if not Game.players[id].connected:
