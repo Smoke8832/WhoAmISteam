@@ -119,7 +119,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(230, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "ip:port"
+placeholder_text = "ip:port  or  Steam lobby id"
 
 [node name="JoinButton" type="Button" parent="Center/Panel/Margin/VBox/JoinRow"]
 unique_name_in_owner = true

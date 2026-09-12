@@ -8,6 +8,7 @@ const HOWTO_SCENE := preload("res://src/ui/HowToPlay.tscn")
 const PAUSE_SCENE := preload("res://src/ui/PauseMenu.tscn")
 const WRITE_SCENE := preload("res://src/ui/WritePanel.tscn")
 const OPTIONS_SCENE := preload("res://src/ui/SettingsMenu.tscn")
+const INVITE_SCENE := preload("res://src/ui/InvitePanel.tscn")
 
 @onready var status_label: Label = %StatusLabel
 @onready var notice_label: Label = %NoticeLabel
@@ -204,6 +205,11 @@ func open_pause() -> void:
 		m.open_howto.connect(func(): call_deferred("open_howto"))
 		m.open_settings.connect(func(): call_deferred("open_settings"))
 		m.open_options.connect(func(): call_deferred("open_options"))
+		m.open_invite.connect(func(): call_deferred("open_invite"))
+
+
+func open_invite() -> void:
+	_open_modal(INVITE_SCENE)
 
 
 func show_notice(text: String) -> void:

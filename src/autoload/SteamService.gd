@@ -160,9 +160,48 @@ func _set_presence() -> void:
 	steam.call("setRichPresence", "status", "In a living room")
 
 
-func open_invite_dialog() -> void:
-	if available and lobby_id != 0:
+## The overlay only exists when the game was launched through Steam. Returns false otherwise.
+func overlay_enabled() -> bool:
+	return available and bool(steam.call("isOverlayEnabled"))
+
+
+func open_invite_dialog() -> bool:
+	if available and lobby_id != 0 and overlay_enabled():
 		steam.call("activateGameOverlayInviteDialog", lobby_id)
+		return true
+	return false
+
+
+const FRIEND_FLAG_IMMEDIATE := 0x04
+
+## Online friends: [{id, name, state, in_game}] — players of this game first, then online, then away.
+func friends_online() -> Array:
+	var out: Array = []
+	if not available:
+		return out
+	var count := int(steam.call("getFriendCount", FRIEND_FLAG_IMMEDIATE))
+	for i in count:
+		var id := int(steam.call("getFriendByIndex", i, FRIEND_FLAG_IMMEDIATE))
+		var state := int(steam.call("getFriendPersonaState", id))
+		if state == 0:
+			continue   # offline
+		var game: Variant = steam.call("getFriendGamePlayed", id)
+		var in_game := typeof(game) == TYPE_DICTIONARY and int(game.get("id", 0)) == APP_ID
+		out.append({"id": id, "name": String(steam.call("getFriendPersonaName", id)), "state": state, "in_game": in_game})
+	out.sort_custom(func(a, b):
+		if a.in_game != b.in_game:
+			return a.in_game
+		if (a.state == 1) != (b.state == 1):
+			return a.state == 1
+		return String(a.name).naturalnocasecmp_to(String(b.name)) < 0)
+	return out
+
+
+## Sends a lobby invite through Steam (arrives as a chat message / notification). No overlay needed.
+func invite_friend(friend_id: int) -> bool:
+	if not available or lobby_id == 0:
+		return false
+	return bool(steam.call("inviteUserToLobby", lobby_id, friend_id))
 
 
 func persona_of(id: int) -> String:

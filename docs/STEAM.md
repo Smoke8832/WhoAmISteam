@@ -38,6 +38,12 @@ Why in-house transport: the official GodotSteam MultiplayerPeer ships only as a 
   get their P2P sessions accepted.
 - Rich presence `connect` = `+connect_lobby <id>` (friends-list "Join game"), `steam_player_group`.
   Overlay invites arrive via `join_requested`. Pause menu → "Invite Steam friends".
+- Invites: the pause menu opens an in-game friends list (`src/ui/InvitePanel.gd`) that calls `inviteUserToLobby`
+  directly, because `activateGameOverlayInviteDialog` needs the Steam overlay and the overlay only injects
+  when the game is launched through Steam (not from the editor or a bare exe). The panel also shows the
+  lobby id; a friend can paste it into the main menu Join field (a 12+ digit number is treated as a lobby id).
+  When the overlay is available an "Open Steam overlay" button appears too. Verified live: friends list
+  populated from the real Steam client on 2026-09-12.
 - Dev flags: `--steam-host`, `--steam-join <lobby_id>`.
 
 ### Verified on 2026-09-12 with the live Steam client (App ID 480)

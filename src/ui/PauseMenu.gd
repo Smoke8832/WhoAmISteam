@@ -5,6 +5,7 @@ signal closed
 signal open_howto
 signal open_settings
 signal open_options
+signal open_invite
 
 @onready var resume_button: Button = %ResumeButton
 @onready var howto_button: Button = %HowtoButton
@@ -18,7 +19,7 @@ signal open_options
 func _ready() -> void:
 	resume_button.pressed.connect(_close)
 	invite_button.visible = Net.is_steam_session() and SteamService.lobby_id != 0
-	invite_button.pressed.connect(func(): SteamService.open_invite_dialog())
+	invite_button.pressed.connect(func(): open_invite.emit(); _close())
 	howto_button.pressed.connect(func(): open_howto.emit(); _close())
 	settings_button.pressed.connect(func(): open_settings.emit(); _close())
 	%OptionsButton.pressed.connect(func(): open_options.emit(); _close())

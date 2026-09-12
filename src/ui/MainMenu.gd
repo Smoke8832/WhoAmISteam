@@ -58,7 +58,15 @@ func _on_host_steam() -> void:
 func _on_join() -> void:
 	_commit_name()
 	show_status(tr("STATUS_CONNECTING"))
-	Net.join(Transport.KIND_ENET, address_edit.text.strip_edges(), {"port": Settings.cli.port})
+	var address := address_edit.text.strip_edges()
+	# A bare number that is too long for a port is a Steam lobby id pasted from a friend.
+	if address.is_valid_int() and address.length() >= 12:
+		if not SteamService.available:
+			show_status(tr("STATUS_STEAM_NEEDED"))
+			return
+		Net.join(Transport.KIND_STEAM, address, {})
+		return
+	Net.join(Transport.KIND_ENET, address, {"port": Settings.cli.port})
 
 
 func _commit_name() -> void:
