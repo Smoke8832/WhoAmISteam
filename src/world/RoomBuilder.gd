@@ -13,7 +13,7 @@ const WALL_T := 0.2
 const COL_FLOOR := Color("c69c6d")
 const COL_WALL := Color("f3e9d2")
 const COL_WALL_ACCENT := Color("9fc5e8")
-const COL_CEILING := Color("dcd5c6")
+const COL_CEILING := Color("d3ccbd")
 const COL_TRIM := Color("6b4a2b")
 
 ## Seat ring: 8 chairs on an ellipse around the coffee table, all facing the center.
@@ -122,12 +122,14 @@ static func _build_shell(root: Node3D) -> void:
 	var shell := Node3D.new()
 	shell.name = "Shell"
 	root.add_child(shell)
-	_box(shell, "Floor", Vector3(ROOM_W, WALL_T, ROOM_D), Vector3(0, -WALL_T / 2.0, 0), COL_FLOOR)
+	var floor_body := _box(shell, "Floor", Vector3(ROOM_W, WALL_T, ROOM_D), Vector3(0, -WALL_T / 2.0, 0), COL_FLOOR)
+	(floor_body.get_child(0) as MeshInstance3D).material_override = ToonMaterials.make_world(COL_FLOOR, ToonMaterials.plank_texture(), 2.4)
+	var paper := ToonMaterials.wallpaper_texture()
 	_box(shell, "Ceiling", Vector3(ROOM_W, WALL_T, ROOM_D), Vector3(0, ROOM_H + WALL_T / 2.0, 0), COL_CEILING)
-	_box(shell, "WallN", Vector3(ROOM_W, ROOM_H, WALL_T), Vector3(0, ROOM_H / 2.0, -ROOM_D / 2.0 - WALL_T / 2.0), COL_WALL_ACCENT)
-	_box(shell, "WallS", Vector3(ROOM_W, ROOM_H, WALL_T), Vector3(0, ROOM_H / 2.0, ROOM_D / 2.0 + WALL_T / 2.0), COL_WALL)
-	_box(shell, "WallE", Vector3(WALL_T, ROOM_H, ROOM_D), Vector3(ROOM_W / 2.0 + WALL_T / 2.0, ROOM_H / 2.0, 0), COL_WALL)
-	_box(shell, "WallW", Vector3(WALL_T, ROOM_H, ROOM_D), Vector3(-ROOM_W / 2.0 - WALL_T / 2.0, ROOM_H / 2.0, 0), COL_WALL)
+	(_box(shell, "WallN", Vector3(ROOM_W, ROOM_H, WALL_T), Vector3(0, ROOM_H / 2.0, -ROOM_D / 2.0 - WALL_T / 2.0), COL_WALL_ACCENT).get_child(0) as MeshInstance3D).material_override = ToonMaterials.make_world(COL_WALL_ACCENT, paper, 1.5)
+	(_box(shell, "WallS", Vector3(ROOM_W, ROOM_H, WALL_T), Vector3(0, ROOM_H / 2.0, ROOM_D / 2.0 + WALL_T / 2.0), COL_WALL).get_child(0) as MeshInstance3D).material_override = ToonMaterials.make_world(COL_WALL, paper, 1.5)
+	(_box(shell, "WallE", Vector3(WALL_T, ROOM_H, ROOM_D), Vector3(ROOM_W / 2.0 + WALL_T / 2.0, ROOM_H / 2.0, 0), COL_WALL).get_child(0) as MeshInstance3D).material_override = ToonMaterials.make_world(COL_WALL, paper, 1.5)
+	(_box(shell, "WallW", Vector3(WALL_T, ROOM_H, ROOM_D), Vector3(-ROOM_W / 2.0 - WALL_T / 2.0, ROOM_H / 2.0, 0), COL_WALL).get_child(0) as MeshInstance3D).material_override = ToonMaterials.make_world(COL_WALL, paper, 1.5)
 	# Skirting board
 	_box(shell, "TrimN", Vector3(ROOM_W, 0.12, 0.04), Vector3(0, 0.06, -ROOM_D / 2.0 + 0.02), COL_TRIM, false)
 	_box(shell, "TrimS", Vector3(ROOM_W, 0.12, 0.04), Vector3(0, 0.06, ROOM_D / 2.0 - 0.02), COL_TRIM, false)
@@ -136,10 +138,14 @@ static func _build_shell(root: Node3D) -> void:
 	# Windows on the east wall (emissive panes)
 	for z in [-2.4, 0.0, 2.4]:
 		var pane := _box(shell, "Window%d" % int(z * 10), Vector3(0.06, 1.3, 1.6), Vector3(ROOM_W / 2.0 - 0.06, 1.7, z), Color("dff3ff"), false)
-		(pane.get_child(0) as MeshInstance3D).material_override = ToonMaterials.make(Color("dff3ff"), null, Color("cfeaff"), 0.8)
+		(pane.get_child(0) as MeshInstance3D).material_override = ToonMaterials.make(Color("dff3ff"), null, Color("cfeaff"), 0.45)
 		_box(shell, "WindowFrame%d" % int(z * 10), Vector3(0.08, 1.4, 1.7), Vector3(ROOM_W / 2.0 - 0.1, 1.7, z), Color("f7f4ec"), false)
 	# Door on the south wall
 	_box(shell, "Door", Vector3(1.1, 2.2, 0.06), Vector3(4.6, 1.1, ROOM_D / 2.0 - 0.04), COL_TRIM, false)
+	for mi in shell.find_children("*", "MeshInstance3D", true, false):
+		var parent_name := String(mi.get_parent().name)
+		if parent_name.begins_with("Wall") or parent_name == "Ceiling":
+			(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 static func _load_model(model: String) -> Node3D:

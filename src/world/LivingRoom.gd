@@ -12,6 +12,10 @@ var tv: Node = null
 
 
 func _ready() -> void:
+	# Afternoon sun from the east windows, high enough to throw short shadows.
+	var sun := get_node_or_null("Sun") as DirectionalLight3D
+	if sun:
+		sun.look_at_from_position(Vector3(5.0, 7.0, 3.0), Vector3(-1.0, 0.0, -1.0), Vector3.UP)
 	var built := RoomBuilder.build(self)
 	chair_nodes = built.chairs
 	prop_nodes = built.props

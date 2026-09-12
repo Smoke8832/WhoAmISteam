@@ -76,3 +76,73 @@ static func pattern_texture(kind: int, accent: Color) -> Texture2D:
 	var tex := ImageTexture.create_from_image(img)
 	_pattern_cache[key] = tex
 	return tex
+
+
+# ------------------------------------------------------------------ room surfaces
+
+static var _surface_cache: Dictionary = {}
+
+
+## Toon material that samples a texture by world position (seamless across boxes).
+static func make_world(color: Color, tex: Texture2D, metres_per_tile: float) -> ShaderMaterial:
+	var m := make(color, tex)
+	m.set_shader_parameter("world_uv", true)
+	m.set_shader_parameter("world_uv_scale", 1.0 / metres_per_tile)
+	return m
+
+
+## Wooden planks: warm grain, slightly different tone per plank, thin dark seams.
+static func plank_texture() -> Texture2D:
+	if _surface_cache.has("planks"):
+		return _surface_cache["planks"]
+	var size := 256
+	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
+	var noise := FastNoiseLite.new()
+	noise.seed = 7
+	noise.frequency = 0.03
+	noise.fractal_octaves = 3
+	var planks := 6
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var plank_tone: Array[float] = []
+	var plank_offset: Array[int] = []
+	for i in planks:
+		plank_tone.append(rng.randf_range(-0.07, 0.07))
+		plank_offset.append(rng.randi_range(0, size - 1))
+	var pw := size / planks
+	for y in size:
+		for x in size:
+			var p := mini(int(x / pw), planks - 1)
+			var grain := noise.get_noise_2d(float(x) * 6.0, float(y) + float(plank_offset[p])) * 0.5 + 0.5
+			var v := 0.9 + plank_tone[p] + (grain - 0.5) * 0.12
+			# Seams between planks and end joints every half texture (staggered per plank).
+			var seam := x % pw < 2 or (y + plank_offset[p]) % (size / 2) < 2
+			if seam:
+				v *= 0.7
+			img.set_pixel(x, y, Color(v, v * 0.97, v * 0.93))
+	var tex := ImageTexture.create_from_image(img)
+	_surface_cache["planks"] = tex
+	return tex
+
+
+## Wallpaper: soft mottled paper with a faint diamond pattern so the walls are not flat.
+static func wallpaper_texture() -> Texture2D:
+	if _surface_cache.has("wallpaper"):
+		return _surface_cache["wallpaper"]
+	var size := 128
+	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
+	var noise := FastNoiseLite.new()
+	noise.seed = 3
+	noise.frequency = 0.08
+	for y in size:
+		for x in size:
+			var mottle := noise.get_noise_2d(float(x), float(y)) * 0.03
+			var dx := absf(float(x % 64) - 32.0) / 32.0
+			var dy := absf(float(y % 64) - 32.0) / 32.0
+			var diamond := 1.0 - smoothstep(0.02, 0.06, absf(dx + dy - 1.0))
+			var v := 0.97 + mottle - diamond * 0.018
+			img.set_pixel(x, y, Color(v, v, v))
+	img.generate_mipmaps()
+	var tex := ImageTexture.create_from_image(img)
+	_surface_cache["wallpaper"] = tex
+	return tex
