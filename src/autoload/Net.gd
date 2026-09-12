@@ -76,9 +76,15 @@ func leave() -> void:
 	var was_active := active
 	active = false
 	connecting = false
+	if transport is SteamTransport:
+		SteamService.leave_lobby()
 	transport = null
 	if was_active:
 		left.emit()
+
+
+func is_steam_session() -> bool:
+	return transport is SteamTransport
 
 
 func join_address() -> String:
@@ -109,4 +115,7 @@ func _on_server_disconnected() -> void:
 	active = false
 	connecting = false
 	multiplayer.multiplayer_peer = null
+	if transport is SteamTransport:
+		SteamService.leave_lobby()
+	transport = null
 	server_disconnected.emit()

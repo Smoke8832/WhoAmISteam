@@ -10,12 +10,17 @@ signal howto_requested
 @onready var quit_button: Button = %QuitButton
 @onready var status_label: Label = %StatusLabel
 @onready var how_button: Button = %HowButton
+@onready var steam_host_button: Button = %SteamHostButton
+@onready var steam_label: Label = %SteamLabel
 
 
 func _ready() -> void:
 	name_edit.text = Settings.player_name()
 	name_edit.text_changed.connect(_on_name_changed)
 	host_button.pressed.connect(_on_host)
+	steam_host_button.pressed.connect(_on_host_steam)
+	SteamService.initialized.connect(func(_ok): _refresh_steam())
+	_refresh_steam()
 	join_button.pressed.connect(_on_join)
 	quit_button.pressed.connect(func(): get_tree().quit())
 	how_button.pressed.connect(func(): howto_requested.emit())
@@ -32,6 +37,20 @@ func _on_host() -> void:
 	_commit_name()
 	show_status(tr("STATUS_HOSTING"))
 	Net.host(Transport.KIND_ENET, int(Game.settings.max_players), {"port": Settings.cli.port})
+
+
+func _refresh_steam() -> void:
+	var ok := SteamService.available
+	steam_host_button.visible = ok
+	steam_label.text = Locale.f("MENU_STEAM_STATUS", {"name": SteamService.persona}) if ok else tr("MENU_STEAM_OFF")
+	if ok and name_edit.text.strip_edges() == "":
+		name_edit.text = Settings.player_name()
+
+
+func _on_host_steam() -> void:
+	_commit_name()
+	show_status(tr("STATUS_HOSTING"))
+	Net.host(Transport.KIND_STEAM, int(Game.settings.max_players), {"friends_only": bool(Game.settings.friends_only)})
 
 
 func _on_join() -> void:

@@ -78,6 +78,11 @@ custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 text = "PAUSE_RESUME"
 
+[node name="InviteButton" type="Button" parent="Center/Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "PAUSE_INVITE"
+
 [node name="HowtoButton" type="Button" parent="Center/Panel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2

@@ -56,8 +56,31 @@ func _apply_cli() -> void:
 		call_deferred("_cli_host")
 	elif String(cli.join) != "":
 		call_deferred("_cli_join")
+	else:
+		# Steam: "Join game" from the friends list passes +connect_lobby <id>; overlay invites
+		# arrive as join_requested while the game runs.
+		SteamService.join_requested.connect(_on_steam_join_requested)
+		# Dev flags: --steam-host / --steam-join <lobby> (SteamService inits when neither --host nor --join is set)
+		if cli.steam_host:
+			var start_host := func(): Net.host(Transport.KIND_STEAM, int(Game.settings.max_players), {"friends_only": true})
+			if SteamService.available:
+				start_host.call_deferred()
+			else:
+				SteamService.initialized.connect(func(ok): if ok: start_host.call(), CONNECT_ONE_SHOT)
+		var lobby := SteamService.connect_lobby_from_args()
+		if int(cli.steam_join) != 0:
+			lobby = int(cli.steam_join)
+		if lobby != 0:
+			SteamService.initialized.connect(func(ok): if ok: _on_steam_join_requested(lobby), CONNECT_ONE_SHOT)
+			if SteamService.available:
+				call_deferred("_on_steam_join_requested", lobby)
 	if float(cli.quit_after) > 0.0:
 		get_tree().create_timer(float(cli.quit_after)).timeout.connect(func(): get_tree().quit())
+
+
+func _on_steam_join_requested(lobby_id: int) -> void:
+	_on_notice("STEAM_JOINING")
+	Net.join(Transport.KIND_STEAM, str(lobby_id))
 
 
 func _cli_host() -> void:

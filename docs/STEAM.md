@@ -27,6 +27,29 @@ Why in-house transport: the official GodotSteam MultiplayerPeer ships only as a 
 5. Build upload: SteamPipe via `steamcmd` (`tools/steam_upload.ps1` will be generated at M8) → set the build live on the Playtest app's default branch.
 6. Playtest with friends → fix → Early Access on the main app.
 
+## Steam transport (implemented in M6)
+
+- `SteamService` (autoload) wraps the GodotSteam singleton dynamically (`Engine.get_singleton("Steam")`),
+  so the game still compiles and runs LAN-only if the extension is missing. It skips init when
+  `--no-steam`, `--bot`, `--host` or `--join` is used.
+- `SteamTransport` creates a friends-only lobby (host) or joins one (client). `SteamPeer` is a GDScript
+  `MultiplayerPeerExtension` over ISteamNetworking P2P: channel 0 data (`[channel][mode][godot packet]`),
+  channel 1 control (HELLO / WELCOME / BYE). Star topology, Godot server relay on. Only lobby members
+  get their P2P sessions accepted.
+- Rich presence `connect` = `+connect_lobby <id>` (friends-list "Join game"), `steam_player_group`.
+  Overlay invites arrive via `join_requested`. Pause menu → "Invite Steam friends".
+- Dev flags: `--steam-host`, `--steam-join <lobby_id>`.
+
+### Verified on 2026-09-12 with the live Steam client (App ID 480)
+
+- init, persona, lobby create, lobby join, rich presence, client timeout when the host does not answer.
+- NOT yet verified: the P2P handshake and gameplay between two different Steam accounts. Steam does not
+  deliver P2P packets from an account to itself, so this needs two PCs / two accounts:
+  1. PC A: start the game, **Host a room (Steam friends)**.
+  2. PC B (friend of A): Steam friends list → Join game (or accept the overlay invite from A's pause menu).
+  3. Both should appear in the room; run a round. Check `%APPDATA%\Godot\app_userdata\Who Am I? Party\logs`
+     or the console for `[steampeer] HELLO` / `WELCOME` lines.
+
 ## In-game Steam features (M6/M7)
 
 - Lobbies: `Steam.createLobby(LOBBY_TYPE_FRIENDS_ONLY, max_players)`, lobby data `version`, `settings`.

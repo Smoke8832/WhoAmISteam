@@ -20,6 +20,8 @@ var cli: Dictionary = {
 	"window_pos": Vector2i(-1, -1),
 	"fast": false,
 	"rejoin_token": "",
+	"steam_host": false,
+	"steam_join": 0,
 }
 
 var data: Dictionary = {
@@ -70,6 +72,11 @@ func _parse_cli() -> void:
 				cli.no_steam = true
 			"--fast":
 				cli.fast = true
+			"--steam-host":
+				cli.steam_host = true
+			"--steam-join":
+				cli.steam_join = int(next)
+				i += 1
 			"--rejoin-token":
 				cli.rejoin_token = next
 				i += 1

@@ -11,16 +11,22 @@ signal open_settings
 @onready var leave_button: Button = %LeaveButton
 @onready var quit_button: Button = %QuitButton
 @onready var address_label: Label = %AddressLabel
+@onready var invite_button: Button = %InviteButton
 
 
 func _ready() -> void:
 	resume_button.pressed.connect(_close)
+	invite_button.visible = Net.is_steam_session() and SteamService.lobby_id != 0
+	invite_button.pressed.connect(func(): SteamService.open_invite_dialog())
 	howto_button.pressed.connect(func(): open_howto.emit(); _close())
 	settings_button.pressed.connect(func(): open_settings.emit(); _close())
 	leave_button.pressed.connect(func(): Net.leave())
 	quit_button.pressed.connect(func(): get_tree().quit())
 	var addr := Net.join_address()
-	address_label.text = Locale.f("PAUSE_ADDRESS", {"address": addr}) if addr != "" else ""
+	if Net.is_steam_session():
+		address_label.text = tr("PAUSE_STEAM_HINT")
+	else:
+		address_label.text = Locale.f("PAUSE_ADDRESS", {"address": addr}) if addr != "" else ""
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 

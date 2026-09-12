@@ -8,5 +8,5 @@ param(
     [string]$Godot = "$env:LOCALAPPDATA\Microsoft\WinGet\Links\godot_console.exe"
 )
 $project = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
-& $Godot --headless --path $project res://tests/TestMain.tscn
+& $Godot --headless --path $project res://tests/TestMain.tscn -- --no-steam
 exit $LASTEXITCODE

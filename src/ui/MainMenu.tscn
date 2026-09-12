@@ -92,6 +92,19 @@ layout_mode = 2
 max_length = 16
 placeholder_text = "Your name"
 
+[node name="SteamHostButton" type="Button" parent="Center/Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "MENU_HOST_STEAM"
+
+[node name="SteamLabel" type="Label" parent="Center/Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.28, 0.25, 1)
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+
 [node name="HostButton" type="Button" parent="Center/Panel/Margin/VBox"]
 unique_name_in_owner = true
 layout_mode = 2
